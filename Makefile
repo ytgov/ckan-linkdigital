@@ -41,7 +41,8 @@ ckan_tag = ckan-2.11.1
 # remote, SOMETHING is pulled from `https://github.com/ckan/ckanext-SOMETHING
 # branch master`
 ext_list = \
-	saml
+	saml \
+	xloader
 
 # information about extension source. Format is `ALTERNATIVE-NAME = URL TYPE
 # REF`, where
@@ -56,6 +57,7 @@ ext_list = \
 #
 # * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
 remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.5
+remote-xloader = https://github.com/ckan/ckanext-xloader.git tag 1.1.2
 
 # extras installed with the extension. Produce `pip install
 # 'ckanext-googleanalytics[requirements]'`-like instructions.
