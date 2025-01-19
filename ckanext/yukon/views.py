@@ -23,6 +23,7 @@ from flask.views import MethodView
 import ckan.plugins.toolkit as tk
 from ckan import model
 from ckan.logic import parse_params
+from ckan.views.user import login
 
 __all__ = ["bp"]
 
@@ -147,6 +148,11 @@ class ComplexView(MethodView):
 
         tk.h.flash_success("Yay! {}".format(result["sum"]))
         return tk.redirect_to("yukon.page")
+
+
+@bp.route("/service/user/login", methods=["GET", "POST"])
+def internal_login():
+    return login()
 
 
 # we don't have to specify `methods` parameter, because `MethodView` already
