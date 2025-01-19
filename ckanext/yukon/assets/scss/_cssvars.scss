@@ -1,0 +1,20 @@
+@use "sass:map";
+@use "variables" as v;
+
+// if you never use variable inside SASS expression, consider using
+// CSS-variables instead. CSS-variables are great for dynamic theme changes and
+// do not visibly affect rendering performance in majority of scenarios.
+:root {
+    --yukon-mobile-font-size: 14px;
+    --yukon-desktop-font-size: 16px;
+
+    --yukon-font-main: "Noto Sans", serif;
+    --yukon-font-heading: "Bitter", serif;
+
+    --yukon-color-brand: #{map.get(v.$pallette, "blue")};
+    --yukon-color-accent: #{map.get(v.$pallette, "red")};
+    --yukon-color-default: #{map.get(v.$pallette, "white")};
+    --yukon-color-link: #{map.get(v.$pallette, "navy")};
+    --yukon-color-text: #{map.get(v.$pallette, "black")};
+    --yukon-color-outline: #{map.get(v.$pallette, "gray")};
+}
