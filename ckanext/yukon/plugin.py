@@ -54,7 +54,7 @@ from . import implementations
 class YukonPlugin(
     # implementations are extracted to separate modules to keep main plugin
     # definition as lean as possible
-    implementations.PackageController,
+    implementations.CkanSaml,
     # don't forget to extend SingletonPlugin. Due to internal
     # implementation details, it must be extended directly by the plugin
     p.SingletonPlugin,
