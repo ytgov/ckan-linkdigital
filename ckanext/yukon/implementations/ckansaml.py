@@ -24,5 +24,5 @@ class CkanSaml(p.SingletonPlugin):
             ]
         ]
 
-        mapped_data["fullname"] = " ".join(fullname_list)
+        mapped_data["fullname"] = " ".join(fullname_list).strip()
         return mapped_data

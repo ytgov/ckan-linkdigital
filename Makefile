@@ -56,7 +56,7 @@ ext_list = \
 # * TYPE: type of reference specified by the next part. One of: branch, commit, tag
 #
 # * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
-remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.6
+remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.7
 remote-xloader = https://github.com/ckan/ckanext-xloader.git tag 1.1.2
 
 # extras installed with the extension. Produce `pip install
