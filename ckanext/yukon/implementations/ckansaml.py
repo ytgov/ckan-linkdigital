@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+import re
 
 
 import ckan.plugins as p
@@ -25,4 +26,7 @@ class CkanSaml(p.SingletonPlugin):
         ]
 
         mapped_data["fullname"] = " ".join(fullname_list).strip()
+
+        if mapped_data.get("name"):
+            mapped_data["name"] = [re.sub(r'[^\w]', '_', mapped_data["name"][0]).lower()]
         return mapped_data
