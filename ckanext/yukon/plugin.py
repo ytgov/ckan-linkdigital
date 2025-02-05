@@ -43,8 +43,9 @@ from ckan.common import CKANConfig
 
 from . import implementations
 
+from ckanext.yukon.logic import actions
 
-@tk.blanket.actions
+
 @tk.blanket.auth_functions
 @tk.blanket.blueprints
 @tk.blanket.cli
@@ -69,6 +70,7 @@ class YukonPlugin(
     # plugin. But do it only if implementation is really straightforward and
     # compact
     p.implements(p.IConfigurer)
+    p.implements(p.IActions)
 
     # IConfigurer
     def update_config(self, config_: CKANConfig):
@@ -83,3 +85,8 @@ class YukonPlugin(
 
         # register assets folder. You must add `webassets.yml` into this folder
         tk.add_resource("assets", "yukon")
+
+    # IActions
+
+    def get_actions(self):
+        return actions.get_actions()
