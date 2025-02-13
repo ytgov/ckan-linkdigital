@@ -25,7 +25,7 @@ class CkanSaml(p.SingletonPlugin):
             ]
         ]
 
-        mapped_data["fullname"] = " ".join(fullname_list).strip()
+        mapped_data["fullname"] = [" ".join(fullname_list).strip()]
 
         if mapped_data.get("name"):
             mapped_data["name"] = [re.sub(r'[^\w]', '_', mapped_data["name"][0]).lower()]
