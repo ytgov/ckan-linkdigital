@@ -36,26 +36,27 @@ Example:
 """
 
 from __future__ import annotations
+from typing import Any
 
 import ckan.plugins as p
 import ckan.plugins.toolkit as tk
 from ckan.common import CKANConfig
 
-from . import implementations
+from . import implementations, helpers
+from .logic import action
 
-from ckanext.yukon.logic import actions
+from ckanext.yukon.logic import action
 
 
 @tk.blanket.auth_functions
 @tk.blanket.blueprints
 @tk.blanket.cli
 @tk.blanket.config_declarations
-@tk.blanket.helpers
 @tk.blanket.validators
 class YukonPlugin(
     # implementations are extracted to separate modules to keep main plugin
     # definition as lean as possible
-    implementations.CkanSaml,
+    implementations.PackageController,
     # don't forget to extend SingletonPlugin. Due to internal
     # implementation details, it must be extended directly by the plugin
     p.SingletonPlugin,
@@ -71,6 +72,7 @@ class YukonPlugin(
     # compact
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
+    p.implements(p.ITemplateHelpers)
 
     # IConfigurer
     def update_config(self, config_: CKANConfig):
@@ -89,4 +91,17 @@ class YukonPlugin(
     # IActions
 
     def get_actions(self):
-        return actions.get_actions()
+        return {
+            "package_show": action.package_show,
+            "package_search": action.package_search,
+            "current_package_list_with_resources": action.current_package_list_with_resources,
+            "package_create": action.package_create,
+            "package_update": action.package_update,
+        }
+
+    # ITemplateHelpers
+    def get_helpers(self) -> dict[str, Any]:
+        return {
+            "get_all_groups": helpers.get_all_groups,
+            "group_is_empty": helpers.group_is_empty,
+        }

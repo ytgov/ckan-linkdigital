@@ -5,16 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ckanext-yukon"
 version = "0.0.1"
-description = ""
+description = "Yukon 2025 CKAN design extension"
 classifiers = [
-            "Development Status :: 4 - Beta",
-            "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
-            "Programming Language :: Python :: 3.11",
-            "Programming Language :: Python :: 3.12",
-            "Programming Language :: Python :: 3.13",
-            "Programming Language :: Python :: 3.14",
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
 ]
 keywords = [ "CKAN" ]
 requires-python = ">= 3.9"
@@ -44,7 +39,7 @@ docs = ["mkdocs", "mkdocs-material", "pymdown-extensions", "mkdocstrings[python]
 dev = ["pytest-ckan", "pytest-benchmark", "pytest-pretty", "mkdocs", "mkdocs-material", "pymdown-extensions", "mkdocstrings[python]", "pre-commit"]
 
 [project.entry-points."ckan.plugins"]
-yukon = "ckanext.yukon.plugin:YukonPlugin"
+yukon_2025_design = "ckanext.yukon.plugin:YukonPlugin"
 
 [project.entry-points."babel.extractors"]
 ckan = "ckan.lib.extract:extract_ckan"

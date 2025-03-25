@@ -17,7 +17,8 @@ class PackageController(p.SingletonPlugin):
         pkg_dict: dict[str, Any],
     ) -> None:
         """Add fake data."""
-        pkg_dict["fake"] = 42
+        # pkg_dict["fake"] = 42
+        pass
 
     def before_dataset_search(self, search_params: dict[str, Any]) -> dict[str, Any]:
         """Improve search filters."""

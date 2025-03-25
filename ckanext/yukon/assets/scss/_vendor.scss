@@ -4,6 +4,5 @@
 
 @use "slick-carousel/slick/slick";
 @use "slick-carousel/slick/slick-theme" with (
-    $slick-font-path: "/slick-fonts/",
     $slick-loader-path: "/",
 );

@@ -14,7 +14,9 @@ import click
 
 from ckan import model
 
-__all__ = ["yukon"]
+__all__ = [
+    # "yukon"
+]
 
 
 # Register CLI group. Code of the group is executed whenever subcommand of this

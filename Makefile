@@ -33,7 +33,7 @@
 # CKAN core supports this short syntax. But internally it's unfolds into
 ## remote-ckan = https://github.com/ckan/ckan tag ckan-2.10.4
 # if you want to use CKAN fork or specific commit, use this full specification
-ckan_tag = ckan-2.11.1
+ckan_tag = ckan-2.11.2
 
 # items from this list are installed by `make full-upgrade` and `make sync
 # install`. If you specify remote, but did not added extension to this list, it
@@ -41,8 +41,7 @@ ckan_tag = ckan-2.11.1
 # remote, SOMETHING is pulled from `https://github.com/ckan/ckanext-SOMETHING
 # branch master`
 ext_list = \
-	saml \
-	xloader
+	scheming
 
 # information about extension source. Format is `ALTERNATIVE-NAME = URL TYPE
 # REF`, where
@@ -56,16 +55,13 @@ ext_list = \
 # * TYPE: type of reference specified by the next part. One of: branch, commit, tag
 #
 # * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
-remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.7
-remote-xloader = https://github.com/ckan/ckanext-xloader.git tag 1.1.2
+remote-scheming = https://github.com/ckan/ckanext-scheming.git branch master
 
 # extras installed with the extension. Produce `pip install
 # 'ckanext-googleanalytics[requirements]'`-like instructions.
 package_extras-remote-googleanalytics = requirements
 package_extras-remote-files = opendal,libcloud
 package_extras-remote-resource-indexer = pdf
-
-
 
 ###############################################################################
 #                              requirements: end                              #
@@ -84,24 +80,25 @@ prepare:  ## download CDM rules
 vendor-dir = ckanext/yukon/assets/vendor
 
 vendor:  ## Copy vendor libraries from node_modules/ to assets directory
-	cp node_modules/tom-select/dist/js/tom-select.{base,complete}.min.js $(vendor-dir)
-	cp node_modules/tom-select/dist/css/tom-select{,.bootstrap5}.css $(vendor-dir)
-	cp node_modules/sweetalert2/dist/sweetalert2.all.min.js $(vendor-dir)/sweetalert2.all.js
-	cp node_modules/sortablejs/Sortable.min.js $(vendor-dir)/Sortable.js
-	cp node_modules/htmx.org/dist/htmx.min.js $(vendor-dir)/htmx.js
-	cp node_modules/hyperscript.org/dist/_hyperscript.min.js $(vendor-dir)/hyperscript.js
-	cp node_modules/izimodal/css/iziModal.css $(vendor-dir)
-	cp node_modules/izimodal/js/iziModal.js $(vendor-dir)
-	cp node_modules/izitoast/dist/css/iziToast.css $(vendor-dir)
-	cp node_modules/izitoast/dist/js/iziToast.js $(vendor-dir)
-	cp node_modules/slick-carousel/slick/slick.{js,css} $(vendor-dir)
-	cp node_modules/slick-carousel/slick/slick-theme.css $(vendor-dir)
-	cp node_modules/slick-carousel/slick/ajax-loader.gif ckanext/yukon/public
-	cp node_modules/slick-carousel/slick/fonts ckanext/yukon/public/slick-fonts -r
-	cp node_modules/daterangepicker/daterangepicker.{js,css} ckanext/yukon/assets/vendor
-	cp node_modules/daterangepicker/moment.min.js ckanext/yukon/assets/vendor
-	cp node_modules/overlayscrollbars/styles/overlayscrollbars.css ckanext/yukon/assets/vendor
-	cp node_modules/overlayscrollbars/browser/overlayscrollbars.browser.es6.js ckanext/yukon/assets/vendor/overlayscrollbars.js
+	# cp node_modules/tom-select/dist/js/tom-select.{base,complete}.min.js $(vendor-dir)
+	# cp node_modules/tom-select/dist/css/tom-select{,.bootstrap5}.css $(vendor-dir)
+	# cp node_modules/sweetalert2/dist/sweetalert2.all.min.js $(vendor-dir)/sweetalert2.all.js
+	# cp node_modules/sortablejs/Sortable.min.js $(vendor-dir)/Sortable.js
+	# cp node_modules/htmx.org/dist/htmx.min.js $(vendor-dir)/htmx.js
+	# cp node_modules/hyperscript.org/dist/_hyperscript.min.js $(vendor-dir)/hyperscript.js
+	# cp node_modules/izimodal/css/iziModal.css $(vendor-dir)
+	# cp node_modules/izimodal/js/iziModal.js $(vendor-dir)
+	# cp node_modules/izitoast/dist/css/iziToast.css $(vendor-dir)
+	# cp node_modules/izitoast/dist/js/iziToast.js $(vendor-dir)
+	# cp node_modules/slick-carousel/slick/slick.{js,css} $(vendor-dir)
+	# cp node_modules/slick-carousel/slick/slick-theme.css $(vendor-dir)
+	# cp node_modules/slick-carousel/slick/ajax-loader.gif ckanext/yukon/public
+	# cp node_modules/slick-carousel/slick/fonts ckanext/yukon/public/slick-fonts -r
+	# cp node_modules/daterangepicker/daterangepicker.{js,css} ckanext/yukon/assets/vendor
+	# cp node_modules/daterangepicker/moment.min.js ckanext/yukon/assets/vendor
+	# cp node_modules/overlayscrollbars/styles/overlayscrollbars.css ckanext/yukon/assets/vendor
+	# cp node_modules/overlayscrollbars/browser/overlayscrollbars.browser.es6.js ckanext/yukon/assets/vendor/overlayscrollbars.js
+	echo "..."
 
 typecheck:  ## Run typechecker
 	npx pyright --pythonpath="$$(which python)"
