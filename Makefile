@@ -41,7 +41,9 @@ ckan_tag = ckan-2.11.3
 # remote, SOMETHING is pulled from `https://github.com/ckan/ckanext-SOMETHING
 # branch master`
 ext_list = \
-	scheming
+	scheming \
+	envvars \
+	saml
 
 # information about extension source. Format is `ALTERNATIVE-NAME = URL TYPE
 # REF`, where
@@ -56,6 +58,8 @@ ext_list = \
 #
 # * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
 remote-scheming = https://github.com/ckan/ckanext-scheming.git branch master
+remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
+remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.7
 
 # extras installed with the extension. Produce `pip install
 # 'ckanext-googleanalytics[requirements]'`-like instructions.

@@ -15,11 +15,11 @@ dataset_fields_groups:
     fr: Renseignements sur la publication
 - name: data_coverage
   label:
-    en: Data Coverage
+    en: Data coverage
     fr: Couverture des données
 - name: usage_data
   label:
-    en: Usage Data
+    en: Usage data
     fr: Données sur l’utilisation
 - name: topics
   label:
@@ -58,7 +58,7 @@ dataset_fields:
   group_name: topics
 - field_name: tag_string
   label:
-    en: Tags
+    en: Keywords
     fr: Étiquettes
   preset: tag_string_autocomplete
   display_snippet: multiple_text_links.html
@@ -66,14 +66,14 @@ dataset_fields:
   group_name: topics
 - field_name: internal_contact_name
   label:
-    en: Internal Contact Name
+    en: Internal contact name
     fr: Nom de la personne-ressource interne
   form_snippet: text.html
   validators: not_empty unicode_safe
   group_name: publisher
 - field_name: internal_contact_email
   label:
-    en: Internal Contact Email
+    en: Internal contact email
     fr: Courriel de la personne-ressource interne
   form_snippet: text.html
   display_snippet: email.html
@@ -98,14 +98,16 @@ dataset_fields:
     en: Custodian
     fr: Dépositaire
   form_snippet: text.html
+  display_snippet: null
   validators: ignore_missing
   group_name: publisher
 - field_name: custodian_email
   label:
-    en: Custodian Email
+    en: Custodian email
     fr: Courriel du dépositaire
   form_snippet: text.html
   display_snippet: email.html
+  display_email_name_field: custodian
   required: false
   group_name: publisher
 - field_name: homepage_url
@@ -118,7 +120,7 @@ dataset_fields:
   group_name: publisher
 - field_name: internal_notes
   label:
-    en: Internal Notes
+    en: Internal notes
     fr: Notes internes
   form_snippet: markdown.html
   display_snippet: markdown.html
@@ -189,61 +191,48 @@ dataset_fields:
   label:
     en: License
     fr: Licence
+  default: "OGL-Yukon-2.0"
   form_snippet: license.html
   required: true
   help_text: "The license under which the data is released."
   group_name: publication_details
 - field_name: date_published
   label:
-    en: Date Published
+    en: Date published
     fr: Date de publication
-  preset: date
-  required: true
+  form_snippet: null
+  display_snippet: date.html
   group_name: publication_details
 - field_name: date_updated
   label:
-    en: Date Updated
+    en: Date updated
     fr: Date de mise à jour
-  preset: date
-  required: true
-  group_name: publication_details
-- field_name: date_publication_updated
-  label:
-    en: Date Publication Updated
-    fr: Date de mise à jour de la publication
-  preset: date
-  required: false
-  group_name: publication_details
-- field_name: date_metadata_updated
-  label:
-    en: Date Metadata Updated
-    fr: Date de mise à jour des métadonnées
-  preset: date
-  required: false
+  form_snippet: null
+  display_snippet: date.html
   group_name: publication_details
 - field_name: publication_required_under_atipp_act
   label:
-    en: Publication Required under the ATIPP Act
+    en: Publication required under the ATIPP Act
     fr: Publication requise par la LAIPVP
-  preset: radio
   choices:
-    - value: na
+    - value: ""
       label:
         en: N/A
         fr: S.O.
-    - value: yes
+    - value: "Yes"
       label:
-        en: Yes
-        fr: Oui
-    - value: no
+        en: "Yes"
+        fr: "Oui"
+    - value: "No"
       label:
-        en: No
-        fr: Non
+        en: "No"
+        fr: "Non"
+  preset: radio
   required: false
   group_name: publication_details
 - field_name: publication_type_under_atipp_act
   label:
-    en: Publication Type under the ATIPP Act
+    en: Publication type under the ATIPP Act
     fr: Type de publication selon la LAIPVP
   preset: select
   choices:
@@ -265,7 +254,7 @@ dataset_fields:
         fr: Rapports de vérification finaux
     - value: departmental_manuals_and_policy_statements
       label:
-        en: Departmental Manuals and Policy Statements
+        en: Departmental manuals and policy statements
         fr: Manuels et énoncés de politique ministériels
     - value: public_opinion_polls_and_research_studies
       label:
@@ -338,7 +327,7 @@ resource_fields:
 
 - field_name: name
   label: Name
-  form_placeholder: eg. January 2011 Gold Prices
+  form_placeholder: The title of the resource
 
 - field_name: description
   label: Description
