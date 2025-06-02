@@ -57,7 +57,7 @@ ext_list = \
 # * TYPE: type of reference specified by the next part. One of: branch, commit, tag
 #
 # * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
-remote-scheming = https://github.com/ckan/ckanext-scheming.git branch master
+remote-scheming = https://github.com/ckan/ckanext-scheming.git tag release-3.1.0
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
 remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.7
 
