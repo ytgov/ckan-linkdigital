@@ -43,7 +43,7 @@ import ckan.plugins as p
 import ckan.plugins.toolkit as tk
 from ckan.common import CKANConfig
 
-from . import implementations, helpers
+from . import helpers, implementations
 from .logic import action, auth
 
 
@@ -84,6 +84,7 @@ class YukonPlugin(
     # definition as lean as possible
     implementations.PackageController,
     implementations.CkanSaml,
+    implementations.Ingest,
     # don't forget to extend SingletonPlugin. Due to internal
     # implementation details, it must be extended directly by the plugin
     p.SingletonPlugin,
@@ -109,7 +110,6 @@ class YukonPlugin(
 
     def i18n_locales(self):
         return ["en", "fr"]
-
 
     # IConfigurer
     def update_config(self, config_: CKANConfig):

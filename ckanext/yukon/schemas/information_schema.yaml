@@ -318,6 +318,9 @@ dataset_fields:
   form_snippet: null
   required: false
   group_name: usage_data
+- field_name: dkan_node_id
+  form_snippet: hidden.html
+  display_snippet: null
 
 resource_fields:
 
