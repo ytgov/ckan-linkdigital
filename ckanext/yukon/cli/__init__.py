@@ -14,9 +14,9 @@ import click
 
 from ckan import model
 
-__all__ = [
-    # "yukon"
-]
+from ckanext.yukon.cli.migration import data_migration
+
+__all__ = ["yukon"]
 
 
 # Register CLI group. Code of the group is executed whenever subcommand of this
@@ -28,6 +28,9 @@ __all__ = [
 def yukon(ctx: click.Context):
     """CLI commands of yukon plugin."""
     ctx.meta["yukon"] = "yukon"
+
+
+yukon.add_command(data_migration)
 
 
 # Command decorated with `yukon.command()` decorator is
