@@ -391,6 +391,9 @@ dataset_fields:
   required: false
   form_snippet: null
   display_snippet: null
+- field_name: dkan_node_id
+  form_snippet: hidden.html
+  display_snippet: null
 
 resource_fields:
 
