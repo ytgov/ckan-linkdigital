@@ -60,7 +60,7 @@ ext_list = \
 # * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
 remote-scheming = https://github.com/ckan/ckanext-scheming.git tag release-3.1.0
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
-remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.7
+remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.9
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 
 # extras installed with the extension. Produce `pip install
