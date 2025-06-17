@@ -44,7 +44,9 @@ ext_list = \
 	scheming \
 	envvars \
 	saml \
-	ingest
+	xloader \
+	ingest \
+	harvest
 
 # information about extension source. Format is `ALTERNATIVE-NAME = URL TYPE
 # REF`, where
@@ -62,6 +64,7 @@ remote-scheming = https://github.com/ckan/ckanext-scheming.git tag release-3.1.0
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
 remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.9
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
+remote-harvest = https://github.com/ckan/ckanext-harvest.git tag v1.6.1
 
 # extras installed with the extension. Produce `pip install
 # 'ckanext-googleanalytics[requirements]'`-like instructions.
