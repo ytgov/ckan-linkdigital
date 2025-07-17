@@ -1,7 +1,9 @@
+from .ingest import Ingest
 from .package_controller import PackageController
-from .ckansaml import CkanSaml
+from .saml import CkanSaml
 
 __all__ = [
     "PackageController",
     "CkanSaml",
+    "Ingest",
 ]

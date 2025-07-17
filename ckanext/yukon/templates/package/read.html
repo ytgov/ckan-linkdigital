@@ -1,0 +1,201 @@
+
+{% extends "package/read_base.html" %}
+
+{% block secondary %}
+  
+{% endblock %}
+
+{% set dataset_type_title=h.dataset_type_title(dataset_type) %}
+{% set can_edit = pkg and h.check_access('package_update', {'id':pkg.id }) %}
+
+{% block breadcrumb_content %}
+  <li class="active">
+    {{ h.nav_link(_(dataset_type_title), named_route='%s.search' % dataset_type) }}
+  </li>
+  <li>
+    <a>{{pkg.title}}</a>
+  </li>
+{% endblock %}
+
+{% block primary %}
+  <div class="primary w-100" role="main">
+    {#
+    The primary_content block can be used to add content to the page.
+    This is the main block that is likely to be used within a template.
+    #}
+    {% block primary_content %}
+      <article>
+        {% block page_header %}
+          <header class="d-lg-flex gap-4 flex-row-reverse  ">
+            {% if self.content_action() | trim %}
+              <div class="content_action ms-auto d-flex gap-2 align-items-center">
+                {% block content_action %}
+                  {% if h.check_access('package_update', {'id':pkg.id }) %}
+                    {% link_for _('Manage'), named_route=pkg.type ~ '.edit', id=pkg.name, class_='btn btn-light', icon='wrench' %}
+                  {% endif %}
+                {% endblock %}
+              </div>
+            {% endif %}
+            
+          </header>
+        {% endblock %}
+        <div>
+          {% if self.page_primary_action() | trim %}
+            <div class="page_primary_action">
+              {% block page_primary_action %}{% endblock %}
+            </div>
+          {% endif %}
+          {% block primary_content_inner %}
+            {{ super() }}
+            {% block package_description %}
+              {% if pkg.private %}
+                <span class="dataset-private badge badge-inverse pull-right">
+                  <i class="fa fa-lock"></i>
+                  {{ _('Private') }}
+                </span>
+              {% endif %}
+              <h1>
+                {% block page_heading %}
+                  {{ h.dataset_display_name(pkg) }}
+                  {% if pkg.state.startswith('draft') %}
+                    [{{ _('Draft') }}]
+                  {% endif %}
+                  {% if pkg.state == 'deleted' %}
+                    [{{ _('Deleted') }}]
+                  {% endif %}
+                {% endblock %}
+              </h1>
+              {% block package_notes %}
+                {% if pkg.notes %}
+                  <div class="notes embedded-content">
+                    {{ h.render_markdown(h.get_translated(pkg, 'notes')) }}
+                  </div>
+                {% endif %}
+              {% endblock %}
+            {% endblock %}
+
+            {% if pkg.resources %}
+              {% block package_resources %}
+                {% snippet "package/snippets/resources_list.html", pkg=pkg, resources=pkg.resources,
+                can_edit=h.check_access('package_update', {'id':pkg.id }) %}
+              {% endblock %}
+            {% endif %}
+
+            
+
+            <div class="d-flex flex-column flex-sm-row flex w-100 items-center gap-2 justify-content-end mb-5 mb-md-0">
+              {% if h.check_access('package_update', {'id':pkg.id }) %}
+                {% link_for _('Add new resource'), named_route=pkg.type ~ '_resource.new', id=pkg.name, class_='btn btn-outline-primary' %}
+              {% endif %}
+              <a href="{{h.url_for('activity.package_activity', id=pkg.name)}}" class="btn btn-outline-primary">{{_("View changes")}}</a>
+              <button class="btn btn-outline-primary btn-api-access"  data-toggle="modal" data-target="#api-access-modal">{{_("Access via API")}}</button>
+            </div>
+
+            {% if pkg.methodology %}
+            <div>
+              <h2>{{ _('Methodology') }}</h2>
+              <p>
+                {{ h.render_markdown(h.get_translated(pkg, 'methodology')) }}
+              </p>
+            </div>
+            {% endif %}
+
+            {% if pkg.changelog %}
+            <div>
+              <h2>{{ _('Changelog') }}</h2>
+              <p>
+                {{ h.render_markdown(h.get_translated(pkg, 'changelog')) }}
+              </p>
+            </div>
+            {% endif %}
+            
+            {% block package_tags %}
+              {# snippet "package/snippets/tags.html", tags=pkg.tags #}
+            {% endblock %}
+          {% endblock %}
+        </div>
+      </article>
+    {% endblock %}
+  </div>
+  <div class="modal fade" id="api-access-modal" tabindex="-1" aria-labelledby="api-access-modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header align-items-start gap-4">
+          <div>
+            <h5 class="modal-title" id="api-access-modalLabel">Access via API</h5>
+            <p class="m-0" style="font-size:14px">{{ _("Access package data via a web API with powerful query support. Further information in the main CKAN <a target='_blank' href='https://docs.ckan.org/en/latest/api/'>API guide</a>") | safe }}.</p>
+          </div>
+          <button type="button" class="close-modal btn btn-xs py-0 px-0 " data-dismiss="modal" aria-label="Close" sty>
+            <span aria-hidden="true" style="font-size: 30px;">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <h6 class="">{{_("Package show")}}</h6>
+          <p class="m-0">{{_("Detailed metadata about a specific dataset using its ID or name")}}:</p>
+          <div class="position-relative d-flex gap-4">
+            <pre class="mt-3">
+<code>curl -X GET "{{g.site_url}}/api/3/action/package_show?id={{pkg.name}}" -H "Accept: application/json"</code>
+            </pre>
+            <button class="copy-btn btn btn-link btn-sm px-0 d-block ms-auto">Copy</button>
+          </div>
+          {% if pkg.resources %}
+            <h6 class="mt-4">{{_("Resource(s) download")}}</h6>
+              {% for resource in pkg.resources %}
+              {% set url_action = pkg.type ~ ('_resource.edit' if url_is_edit and can_edit else '_resource.read') %}
+              {% set url = url or h.url_for(url_action, id=pkg.name, resource_id=resource.id) %}
+              <p class="m-0">{{resource.name}}</p>
+              <div class="position-relative d-flex gap-4">
+                <pre class="mt-2">
+<code>{{g.site_url}}{{url}}</code>
+                </pre>
+                <button class="copy-btn btn btn-link btn-sm px-0 d-block ms-auto">Copy</button>
+              </div>
+              {% endfor %}
+          {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal" data-dismiss="modal">Close</button>
+   
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const copyBtns = document.querySelectorAll(".copy-btn");
+      copyBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const codeElement = btn.previousElementSibling.querySelector("code");
+          const text = codeElement.innerText.trim();
+          navigator.clipboard.writeText(text).then(() => {
+            const range = document.createRange();
+            range.selectNodeContents(codeElement);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }).catch(err => {
+            console.error("Failed to copy:", err);
+          });
+        });
+      });
+      
+      
+   
+      document.addEventListener("DOMContentLoaded", function () {
+        const btn = document.querySelector(".btn-api-access");
+        const modal = new bootstrap.Modal(document.getElementById("api-access-modal"));
+        const closeModal = document.querySelectorAll('[data-dismiss="modal"]');
+
+        btn.addEventListener("click", function () {
+          modal.show();
+        });
+        closeModal.forEach((item)=>{
+          item.addEventListener("click", function () {
+            modal.hide();
+          });
+        })
+      });
+    })();
+  </script>
+{% endblock %}

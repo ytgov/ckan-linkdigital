@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
-
-import ckan.plugins.toolkit as tk
-from ckan.types import Context
+import ckan.plugins.toolkit as toolkit
 
 
-@tk.auth_allow_anonymous_access
-def yukon_get_sum(context: Context, data_dict: dict[str, Any]):
-    """Any user can compute sum."""
-    return {"success": True}
-
-
-def yukon_something_create(context: Context, data_dict: dict[str, Any]):
-    """Authenticated user can create something."""
-    return {"success": True}
+def package_delete_sysadmin_only(context, data_dict):
+    """
+    Auth function to allow only sysadmins to delete datasets.
+    """
+    # Check if user has sysadmin role
+    if not toolkit.check_access('sysadmin', context):
+        raise toolkit.NotAuthorized(
+            "Only sysadmins can delete datasets."
+        )
+    # Allow deletion
+    return context

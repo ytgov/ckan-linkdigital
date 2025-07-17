@@ -1,0 +1,119 @@
+{% extends "page.html" %}
+{% import 'macros/form.html' as form %}
+
+{% set dataset_type_title = _(h.dataset_type_title(dataset_type)) %}
+
+{% do facet_titles.update({'tags': _('Keywords')}) %}
+
+{% do facet_titles.update({'groups': _('Topics')}) %}
+
+{% do facet_titles.update({'res_format': _('Format')}) %}
+
+{% block subtitle %}{{ dataset_type_title }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{{ h.nav_link(dataset_type_title, named_route='%s.search' % dataset_type) }}</li>
+{% endblock %}
+
+{% block primary_content %}
+  <section class="">
+    <h1>
+      {{dataset_type_title}}
+    </h1>
+    <p class="fs-6">
+      {% if dataset_type == 'data' %}
+        {{_("Find statistical and administrative data, geospatial data, and other machine-readable data.")}}
+      {% elif dataset_type == 'information' %}
+        {{_("Find annual reports, news releases, scientific research publications, and other information.")}}
+      {% elif dataset_type == 'access-requests' %}
+        {{_("Search or browse completed Access to Information (ATIPP) requests and responsive records.")}} <a target="_blank" href="https://yukon.ca/en/legal-and-social-supports/legal-services/request-access-information-records">{{_("Submit an Access to Information request.")}}</a>
+      {% elif dataset_type == 'pia-summaries' %}
+        {{_("Find summaries of completed Privacy Impact Assessments (PIAs).")}}
+      {% endif %}
+    </p>
+    <div class="mt-4">
+      {% block page_primary_action %}
+        {% if h.check_access('package_create') %}
+          <div class="page_primary_action">
+            {{ h.snippet ('snippets/add_dataset.html', dataset_type=dataset_type) }}
+          </div>
+        {% endif %}
+      {% endblock %}
+      {% block form %}
+        {% set facets = {
+          'fields': fields_grouped,
+          'search': search_facets,
+          'titles': facet_titles,
+          'translated_fields': translated_fields,
+          'remove_field': remove_field }
+        %}
+        {% set sort_by_selected = request.args.get('sort', 'metadata_modified desc') %}
+        {% set sorting = [
+          (_('Relevance'), 'score desc, metadata_modified desc'),
+          (_('Name Ascending'), 'title_string asc'),
+          (_('Name Descending'), 'title_string desc'),
+          (_('Last Modified'), 'metadata_modified desc'),
+          (_('Popular'), 'views_recent desc') if g.tracking_enabled else (false, false) ]
+        %}
+        {% snippet 'snippets/search_form.html', form_id='dataset-search-form', type=dataset_type, query=q, sorting=sorting, sorting_selected=sort_by_selected, count=page.item_count, placeholder=_("Enter search terms ..."), facets=facets, show_empty=request.args, error=query_error, fields=fields %}
+      {% endblock %}
+      {% block package_search_results_list %}
+        {{ h.snippet('snippets/package_list.html', packages=page.items, type=dataset_type) }}
+      {% endblock %}
+    </div>
+
+    {% block page_pagination %}
+      {{ page.pager(q=q) }}
+    {% endblock %}
+  </section>
+
+  {% block package_search_results_api %}
+    <section class="">
+      <div class="">
+        {% block package_search_results_api_inner %}
+          <small>
+            {% set api_link = h.link_to(_('API'), h.url_for('api.get_api', ver=3)) %}
+            {% set api_doc_link = h.link_to(_('API Docs'), 'http://docs.ckan.org/en/{0}/api/'.format(g.ckan_doc_version)) %}
+            {% if g.dumps_url -%}
+              {% set dump_link = h.link_to(_('full {format} dump').format(format=g.dumps_format), g.dumps_url) %}
+              {% trans %}
+              You can also access this registry using the {{ api_link }} (see {{ api_doc_link }}) or download a {{ dump_link }}.
+          {% endtrans %}
+            {% else %}
+          {% trans %}
+          You can also access this registry using the {{ api_link }} (see {{ api_doc_link}}).
+          {% endtrans %}
+            {%- endif %}
+          </small>
+        {% endblock %}
+      </div>
+    </section>
+  {% endblock %}
+{% endblock %}
+
+
+{% block secondary_content %}
+  {% set facet_order = ['res_format', 'organization', 'groups', 'tags'] %}
+
+  {% set organization_label = {
+      'data': _('Publisher'),
+      'access-requests': _('Public body'),
+      'information': _('Publisher')
+  }.get(dataset_type, facet_titles.get('organization', _('Organization'))) %}
+
+  {% set reordered_facet_titles = {
+      'res_format': _("Format"),
+      'organization': organization_label,
+      'groups': facet_titles.get('groups'),
+      'tags': facet_titles.get('tags')
+  } %}
+
+  <div class="filters">
+    <div class="p-4 p-md-0">
+      {% for facet in facet_order if facet in reordered_facet_titles %}
+        {% snippet 'snippets/facet_list.html', title=reordered_facet_titles[facet], name=facet, search_facets=search_facets %}
+      {% endfor %}
+    </div>
+    <a class="close no-text hide-filters"><i class="fa fa-times-circle"></i><span class="text">close</span></a>
+  </div>
+{% endblock %}

@@ -1,0 +1,103 @@
+<footer id="footer" class="footer bg-eden max-w-none text-white">
+  <div class="footer-left overflow-hidden py-0 px-1">
+    <div class="container-lg footer-logos">
+      <a href="/">
+        <img src="/images/logo-white.svg" alt="Yukon Logo" style="width: 107px;" />
+      </a>
+    </div>
+  </div>
+  <div class="footer-right bg-tiber pb-2">
+    <div
+      class="container-lg d-md-flex align-items-md-start justify-content-md-between"
+    >
+      <div class="footer__menus text-base d-md-flex w-auto pt-4">
+        <div class="region region-footer-menu">
+          <nav
+            role="navigation"
+            aria-labelledby="block-footermenu-menu"
+            id="block-footermenu"
+            class="block block-menu navigation menu--menu-wet-footer"
+          >
+            <h2 class="block-title visually-hidden" id="block-footermenu-menu">
+              {% trans %}Footer menu{% endtrans %}
+            </h2>
+
+            <ul class="menu">
+              <li class="menu-item">
+                <a href="{{ h.url_for('home.index') }}">{% trans %}Home{% endtrans %}</a>
+              </li>
+              <li class="menu-item">
+                <a href="https://yukon.ca/en/documents">{% trans %}Documents{% endtrans %}</a>
+              </li>
+              <li class="menu-item">
+                <a href="https://yukon.ca/en/arts-and-culture/events">{% trans %}Events{% endtrans %}</a>
+              </li>
+              <li class="menu-item">
+                <a href="https://yukon.ca/forms">{% trans %}Forms{% endtrans %}</a>
+              </li>
+              <li class="menu-item">
+                <a href="https://yukon.ca/en/news">{% trans %}News{% endtrans %}</a>
+              </li>
+              <li class="menu-item">
+                <a
+                  href="https://yukon.ca/en/your-government/legislation/find-government-legislation"
+                  >{% trans %}Legislation{% endtrans %}</a
+                >
+              </li>
+              <li class="menu-item">
+                <a href="https://yukon.ca/en/places">{% trans %}Places{% endtrans %}</a>
+              </li>
+            </ul>
+          </nav>
+          <nav
+            role="navigation"
+            aria-labelledby="block-secondaryfootermenu-menu"
+            id="block-secondaryfootermenu"
+            class="block block-menu navigation menu--menu-secondary-footer-menu"
+          >
+            <h2
+              class="block-title visually-hidden"
+              id="block-secondaryfootermenu-menu"
+            >
+              {% trans %}Secondary Footer Menu{% endtrans %}
+            </h2>
+
+            <ul class="menu">
+              <li class="menu-item">
+                <a
+                  href="https://yukon.ca/en/your-government/contact-and-follow-government/contact-government"
+                  data-drupal-link-system-path="node/1028"
+                  >{% trans %}Contact us{% endtrans %}</a
+                >
+              </li>
+              <li class="menu-item">
+                <a
+                  href="https://yukon.ca/en/copyright"
+                  data-drupal-link-system-path="node/654"
+                  >{% trans %}Copyright{% endtrans %}</a
+                >
+              </li>
+              <li class="menu-item">
+                <a
+                  href="https://yukon.ca/en/disclaimer"
+                  data-drupal-link-system-path="node/664"
+                  >{% trans %}Disclaimer{% endtrans %}</a
+                >
+              </li>
+              <li class="menu-item">
+                <a
+                  href="https://yukon.ca/en/privacy-statement"
+                  data-drupal-link-system-path="node/662"
+                  >{% trans %}Privacy statement{% endtrans %}</a
+                >
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__legal font-light w-auto flex pt-2 pt-md-4 pb-2 ms-1">
+        ©&nbsp;{{ h.get_current_year() }}&nbsp;<a href="https://yukon.ca">Government of Yukon</a>
+      </div>
+    </div>
+  </div>
+</footer>
