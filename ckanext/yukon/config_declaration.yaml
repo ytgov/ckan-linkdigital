@@ -3,14 +3,17 @@ groups:
     - annotation: yukon configuration
       options:
 
-          - key: ckanext.yukon.option.name
-            default: 10
-            type: int
-            description: |
-                Integer placerat tristique nisl.
-
-          - key: ckanext.yukon.multivalued.option
-            type: list
+          - key: ckanext.yukon.login.safe_ip
             editable: true
+            type: list
+            default: "127.0.0.1"
             description: |
-                Another option that will be parsed as a list of words.
+                List of IPs that are allowed to login through native CKAN login
+                form. `*` can be used as a wildcard, i.e: ``127.0.*.*``.
+
+          - key: ckanext.yukon.login.ip_header
+            editable: true
+            default: X-Forwarded-For
+            description: |
+                Header that containing the real IP of the visitor. Set by
+                reverse-proxy.

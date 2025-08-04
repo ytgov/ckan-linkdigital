@@ -54,11 +54,11 @@ Example:
         <div class="d-flex flex-column flex-md-row gap-1">
             <div class="d-flex flex-column gap-1">
                 <div>
-                    <b>{{_("Date updated")}}:</b> 
+                    <b>{{_("Date updated")}}:</b>
                     {% snippet 'snippets/local_friendly_datetime.html', datetime_obj=package.metadata_modified %}
                 </div>
                 <div>
-                    <b>{{_("Date created")}}:</b> 
+                    <b>{{_("Date created")}}:</b>
                     {% snippet 'snippets/local_friendly_datetime.html', datetime_obj=package.metadata_created %}
                 </div>
             </div>
@@ -67,32 +67,32 @@ Example:
                   {{dataset_type}}
                     <b>
                       {% if type == "access-requests" %}{{ _("Public body") }}{% else %}{{ _("Publisher") }}{% endif %}:
-                    </b> 
+                    </b>
                     <span>{{package.organization.title}}</span>
                 </div>
-                
+
                     {% if package.resources and not hide_resources %}
                     {% block resources_outer %}
                     <div>
-                        <b>{{_("Format")}}:</b> 
-                       
+                        <b>{{_("Format")}}:</b>
+
                         {% block resources_inner %}
                             {% set formats = h.dict_list_reduce(package.resources, 'format') %}
                             {% for resource in formats %}
-                                <a href="{{ h.url_for(package.type ~ '.read', id=package.name) }}" class="" data-format="{{ resource.lower() }}">{{ resource }}</a>{% if not loop.last %}, {% endif %}
+                                <a href="{{ h.url_for(package.type ~ '.read', id=package.name) }}#dataset-resources" class="" data-format="{{ resource.lower() }}">{{ resource }}</a>{% if not loop.last %}, {% endif %}
                             {% endfor %}
                         {% endblock %}
-                   
+
                     </div>
                     {% endblock %}
                     {% endif %}
-                
+
             </div>
         </div>
 
       </div>
       {% block resources %}
-        
+
       {% endblock %}
     {% endblock %}
   </li>

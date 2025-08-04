@@ -1,12 +1,9 @@
 body {
-  --bs-border-color: #f1f1f1;
-  --bs-link-color-rgb: 0, 131, 146;
-  --bs-link-color: #008392;
-  --bs-link-hover-color: #1a5668;
+  --bs-link-hover-color-rgb: 0, 131, 146;
   font-family: var(--bs-body-font-family);
 }
-a {
-  text-decoration: none;
+a:hover {
+  color:#008392
 }
 @media (min-width:992px) and (max-width:1023.99px){
   .w-md-33{
@@ -22,11 +19,12 @@ a {
 }
 @media( min-width:1024px ){
   .w-md-25{
-    min-width: 25%;
+    max-width: 25%;
+    width: 100%;
   }
-  
+
   .w-lg-75{
-    min-width: 75%;  
+    min-width: 75%;
   }
 }
 
@@ -80,7 +78,7 @@ a {
 @media(min-width:1204px){
   .main .secondary{
     height: fit-content;
-    
+
   }
 }
 
@@ -94,12 +92,17 @@ a {
 }
 
 /*breadcrumb*/
-.toolbar .breadcrumb li.home{
+.toolbar .breadcrumb li.home-link a{
   padding-left: 0;
 }
-.toolbar .home span {
-  display: inline-block;
-  color: var(--bs-link-color);
+
+.toolbar .breadcrumb li.home-link a{
+  color: var(--bs-link-color)!important;
+  text-decoration: underline;
+}
+
+.toolbar .breadcrumb li.home-link:hover a{
+  color: rgba(var(--bs-link-hover-color-rgb), 1)!important;
 }
 .toolbar .breadcrumb a {
   font-size: 14px;
@@ -117,6 +120,10 @@ a {
   font-size: 14px;
   position: relative;
   top: 5px;
+}
+
+.toolbar .breadcrumb li:last-child a{
+  text-decoration: none;
 }
 
 /*search page: facet_list.html*/
@@ -140,6 +147,10 @@ a {
 .facet-wrapper .facet-group li a{
   padding:4px 16px 4px 5px;
   display: block;
+  text-decoration: none;
+}
+.facet-wrapper .facet-group li a:hover{
+  text-decoration: underline;
 }
 
 .facet-wrapper .empty{
@@ -212,15 +223,17 @@ header:not(.module-content)  .content_action .btn-light{
   min-height: 16px;
 }
 .resource-item .heading{
-  font-size: 16px;;
+  font-size: 16px;
+  text-decoration: none;
+  color:var(--bs-body-color)
 }
 
 .resource-item .resource-name{
   font-size: 20px;
 }
 
-.resource-item .heading{
-  color:var(--bs-body-color)
+.resource-item .resource-name:hover{
+  text-decoration: underline;
 }
 
 /*form label */
@@ -228,4 +241,14 @@ header:not(.module-content)  .content_action .btn-light{
 form .control-label,
 form strong{
   font-weight: 600!important;
+}
+
+/*  nav links */
+.page-header .nav-tabs li a,
+header:not(.module-content) .nav.nav-tabs > li > a{
+  text-decoration: none;
+}
+
+.module.module-narrow.resources>ul{
+  flex-direction: column;
 }

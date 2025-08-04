@@ -1,5 +1,5 @@
-{% ckan_extends %} 
-{% block head_extras %} 
+{% ckan_extends %}
+{% block head_extras %}
     {{super()}}
     <link rel="stylesheet" href="/css/styles.css" />
     <link rel="stylesheet" href="/css/yukon.css" />
@@ -8,11 +8,15 @@
         _paq.push(['trackPageView']);
         _paq.push(['enableLinkTracking']);
         (function() {
-          var u="https://analytics.gov.yk.ca/";
-          _paq.push(['setTrackerUrl', u+'matomo.php']);
-          _paq.push(['setSiteId', "{{ h.matomo_siteid() }}"]);
-          var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-          g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+            var u="https://analytics.gov.yk.ca/";
+            _paq.push(['setTrackerUrl', u+'matomo.php']);
+            _paq.push(['setSiteId', "{{ h.matomo_siteid() }}"]);
+            var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+            g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
         })();
     </script>
+{% endblock %}
+
+{% block links %}
+    <link rel="shortcut icon" type="image/x-icon" href="{{ h.url_for_static('/images/favicon.ico') }}?v=2" />
 {% endblock %}

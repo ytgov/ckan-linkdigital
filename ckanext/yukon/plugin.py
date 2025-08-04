@@ -74,6 +74,7 @@ from .logic import action, auth
         "dataset_type_title": helpers.dataset_type_title,
         "dataset_type_menu_title": helpers.dataset_type_menu_title,
         "matomo_siteid": helpers.add_matomo_siteid_to_context,
+        "yukon_allow_local_login": helpers.yukon_allow_local_login,
     }
 )
 @tk.blanket.blueprints

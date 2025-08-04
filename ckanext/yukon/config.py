@@ -4,15 +4,13 @@ from __future__ import annotations
 
 import ckan.plugins.toolkit as tk
 
-OPTION = "ckanext.yukon.option.name"
-MULTI = "ckanext.yukon.multivalued.option"
+IP_HEADER = "ckanext.yukon.login.ip_header"
+SAFE_IPS = "ckanext.yukon.login.safe_ip"
 
 
-def option() -> int:
-    """Integer placerat tristique nisl."""
-    return tk.config[OPTION]
+def ip_header() -> str:
+    return tk.config[IP_HEADER]
 
 
-def multivalued() -> list[str]:
-    """Another option that will be parsed as a list of words."""
-    return tk.config[MULTI]
+def safe_ips() -> list[str]:
+    return tk.config[SAFE_IPS]
