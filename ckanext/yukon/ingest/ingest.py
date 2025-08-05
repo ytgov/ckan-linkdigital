@@ -158,7 +158,7 @@ class YukonPackageRecord(PackageRecord):
 
         ideal_name = _title_to_name(data_dict["title"])
         pkg = model.Package.get(ideal_name)
-        if not pkg or pkg.extras["dkan_node_id"] == dkan_node_id:
+        if not pkg or pkg.extras.get("dkan_node_id", "") == dkan_node_id:
             return ideal_name
 
         name_results = (
