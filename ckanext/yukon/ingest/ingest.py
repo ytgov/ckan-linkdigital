@@ -4,8 +4,10 @@ import csv
 import dataclasses
 import logging
 import os
+import time
 import uuid
 from datetime import datetime
+from http import HTTPStatus
 from io import StringIO
 from typing import Any, Iterable
 
@@ -21,10 +23,13 @@ from ckanext.ingest import shared
 from ckanext.ingest.record import PackageRecord, ResourceRecord
 from ckanext.ingest.strategy.csv import CsvSimpleStrategy
 
+from .redirect_map import RedirectMap
+
 log = logging.getLogger(__name__)
 
-HTTP_OK = 200
+RETRY_DELAY = 60
 RESOURCE_NS = uuid.uuid3(uuid.NAMESPACE_DNS, "yukon_resource")
+DKAN_PACKAGE_API = "https://open.yukon.ca/api/3/action/package_show?id={}"
 
 DEFAULT_MAPPING = {
     "notes": "not_specified",
@@ -34,8 +39,8 @@ DEFAULT_MAPPING = {
 }
 
 RESOURCE_UNIQUE_FIELD = {
-    "information": ["dkan_resource_node_id"],
-    "data": ["dkan_resource_node_id"],
+    "information": ["name", "created", "url", "dkan_parent_dataset_node_id"],
+    "data": ["name", "created", "dkan_parent_dataset_node_id"],
     "access-requests": ["name", "created"],
 }
 
@@ -125,6 +130,12 @@ class YukonPackageRecord(PackageRecord):
             self._insert_dates()
             return {"success": True}
         result = super().ingest(context)
+        redirect_map: RedirectMap = self.options.get("redirect_map")
+        if redirect_map and (old_url := self.data.get("dkan_uri")):
+            new_url = tk.h.url_for(
+                result["result"]["type"] + ".read", id=result["result"]["name"]
+            )
+            redirect_map.add(old_url, new_url)
         self._insert_dates()
         return result
 
@@ -147,7 +158,7 @@ class YukonPackageRecord(PackageRecord):
 
         ideal_name = _title_to_name(data_dict["title"])
         pkg = model.Package.get(ideal_name)
-        if not pkg or pkg.extras["dkan_node_id"] == dkan_node_id:
+        if not pkg or pkg.extras.get("dkan_node_id", "") == dkan_node_id:
             return ideal_name
 
         name_results = (
@@ -179,14 +190,14 @@ class YukonPackageRecord(PackageRecord):
 class YukonResourceRecord(ResourceRecord):
     def transform(self, raw: Any):
         data_dict = raw.copy()
-        parent_dcan_node_id = data_dict["dkan_parent_dataset_node_id"]
+        parent_dkan_node_id = data_dict["dkan_parent_dataset_node_id"]
         parent_pkg = (
             model.Session.query(model.Package)
             .filter(
                 model.Package.extras.any(
                     and_(
                         model.PackageExtra.key == "dkan_node_id",
-                        model.PackageExtra.value == str(parent_dcan_node_id),
+                        model.PackageExtra.value == str(parent_dkan_node_id),
                     )
                 )
             )
@@ -209,21 +220,75 @@ class YukonResourceRecord(ResourceRecord):
         if (data_dict.get("url_type") or "") == "upload":
             uploader = get_resource_uploader(data_dict)
             os.makedirs(uploader.get_directory(data_dict["id"]), exist_ok=True)
+            while True:
+                try:
+                    response = requests.get(
+                        requests.utils.requote_uri(self.raw["url"]),
+                        headers=self.options["headers"],
+                        cookies=self.options["cookies"],
+                        timeout=20,
+                    )
+                    response.raise_for_status()
+                    break
+                except requests.exceptions.ReadTimeout as err:
+                    log.warning(
+                        "Read-timeout for %s (%s). Retrying in %s s",
+                        self.raw["url"],
+                        err,
+                        RETRY_DELAY,
+                    )
+                except requests.exceptions.HTTPError as err:
+                    status = err.response.status_code
+
+                    if status == HTTPStatus.NOT_FOUND:
+                        log.exception(
+                            "Not found (%s): %s – giving up.",
+                            status,
+                            self.raw["url"],
+                        )
+                        data_dict["error"] = HTTPStatus.NOT_FOUND
+                        break
+                    log.warning(
+                        "HTTP error %s for %s (%s). Retrying in %s s",
+                        status,
+                        self.raw["url"],
+                        err,
+                        RETRY_DELAY,
+                    )
+                except requests.exceptions.RequestException as err:
+                    log.warning(
+                        "Download failed for %s (%s). Retrying in %s s",
+                        self.raw["url"],
+                        err,
+                        RETRY_DELAY,
+                    )
+                time.sleep(RETRY_DELAY)
             with open(uploader.get_path(data_dict["id"]), "wb") as f:
-                response = requests.get(
-                    self.raw["url"],
-                    headers=self.options["headers"],
-                    cookies=self.options["cookies"],
-                    timeout=20,
-                )
-                if response.status_code != HTTP_OK:
-                    log.exception("Cannot download resource file.")
-                    return data_dict
                 f.write(response.content)
         return data_dict
 
     def ingest(self, context: types.Context) -> shared.IngestionResult:
+        if error := self.data.get("error"):
+            raise tk.ValidationError(error)
+
         result = super().ingest(context)
+        redirect_map: RedirectMap = self.options.get("redirect_map")
+        if redirect_map:
+            if self.data.get("url_type") == "upload" and (
+                old_file_url := self.data.get("url")
+            ):
+                new_file_url = result["result"]["url"]
+                redirect_map.add(old_file_url, new_file_url)
+
+            if old_resource_url := self.data.get("dkan_uri"):
+                new_resource_url = tk.h.url_for(
+                    "resource.read",
+                    id=result["result"]["package_id"],
+                    resource_id=result["result"]["id"],
+                    _external=True,
+                )
+                redirect_map.add(old_resource_url, new_resource_url)
+
         self._insert_dates()
         return result
 
