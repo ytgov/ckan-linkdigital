@@ -13,6 +13,8 @@ from werkzeug.datastructures import FileStorage
 
 import ckan.plugins.toolkit as tk
 
+from ckanext.yukon.ingest import RedirectMap
+
 log = logging.getLogger(__name__)
 
 VALID_ENTITIES = [
@@ -44,6 +46,15 @@ RESOURCE_TO_PACKAGE = {
     "resources_data": "data",
     "resources_access_requests": "access_requests",
 }
+
+REDIRECT_MAP_REQUIRED = [
+    "information",
+    "data",
+    "access_requests",
+    "resources_information",
+    "resources_data",
+    "resources_access_requests",
+]
 
 
 @click.group("data-migration", short_help="Migrate DKAN data")
@@ -109,6 +120,20 @@ def parse_cookie(
     help="Names of entities to migrate",
 )
 @click.option(
+    "-H",
+    "--header",
+    multiple=True,
+    callback=parse_header,
+    help='Extra HTTP header (repeatable), e.g.  -H "User-Agent: mybot/1.0"',
+)
+@click.option(
+    "-c",
+    "--cookie",
+    multiple=True,
+    callback=parse_cookie,
+    help='Cookie (repeatable), e.g.  -c "cf_clearance=abc123"',
+)
+@click.option(
     "-s",
     "--skip",
     type=click.IntRange(min=0),
@@ -124,18 +149,12 @@ def parse_cookie(
     help="Maximum number of records to ingest from each CSV (after --skip).",
 )
 @click.option(
-    "-H",
-    "--header",
-    multiple=True,
-    callback=parse_header,
-    help='Extra HTTP header (repeatable), e.g.  -H "User-Agent: mybot/1.0"',
-)
-@click.option(
-    "-c",
-    "--cookie",
-    multiple=True,
-    callback=parse_cookie,
-    help='Cookie (repeatable), e.g.  -c "cf_clearance=abc123"',
+    "-o",
+    "--redirect-map-path",
+    type=click.Path(dir_okay=False, writable=True, path_type=Path),
+    default="redirect.map",
+    show_default=True,
+    help="File to write Nginx redirect map.",
 )
 def migrate_data(  # noqa PLR0913
     zip_path: str,
@@ -144,12 +163,14 @@ def migrate_data(  # noqa PLR0913
     cookie: dict[str, str],
     skip: int,
     take: int | None,
+    redirect_map_path: Path,
 ):
     """Import CSVs packed in *zip_path* using CKAN’s ``ingest_import_records``.
 
     The ZIP **must** contain ``<entity>.csv`` for every selected or default
     entity.
     """
+    redirect_map = RedirectMap()
     selected = [e.lower() for e in (entity or VALID_ENTITIES)]
     ordered = [e for e in VALID_ENTITIES if e in selected]
 
@@ -179,6 +200,17 @@ def migrate_data(  # noqa PLR0913
                     content_type=mimetypes.guess_type(member)[0] or "text/csv",
                 )
 
+            options = {
+                "record_options": {
+                    "update_existing": True,
+                    "cookies": cookie,
+                    "headers": header,
+                },
+            }
+
+            if ent in REDIRECT_MAP_REQUIRED:
+                options["record_options"]["redirect_map"] = redirect_map
+
             try:
                 tk.get_action("ingest_import_records")(
                     {"user": user["name"]},
@@ -188,13 +220,7 @@ def migrate_data(  # noqa PLR0913
                         "report": "tmp",
                         "skip": skip,
                         "take": take,
-                        "options": {
-                            "record_options": {
-                                "update_existing": True,
-                                "cookies": cookie,
-                                "headers": header,
-                            },
-                        },
+                        "options": options,
                     },
                 )
                 click.secho(f"Imported {ent}", fg="green")
@@ -243,3 +269,5 @@ def migrate_data(  # noqa PLR0913
         raise IngestFailures(failures)
 
     click.secho("All selected entities imported successfully.", fg="green")
+    redirect_map.write(redirect_map_path)
+    click.secho(f"Wrote {redirect_map}", fg="blue")
