@@ -129,6 +129,7 @@ class YukonPackageRecord(PackageRecord):
         if self.options.get("only_dates"):
             self._insert_dates()
             return {"success": True}
+
         result = super().ingest(context)
         redirect_map: RedirectMap = self.options.get("redirect_map")
         if redirect_map and (old_url := self.data.get("dkan_uri")):
@@ -217,6 +218,9 @@ class YukonResourceRecord(ResourceRecord):
             }
         )
 
+        if self.options["update_resource_dates_only"]:
+            return data_dict
+
         if (data_dict.get("url_type") or "") == "upload":
             uploader = get_resource_uploader(data_dict)
             os.makedirs(uploader.get_directory(data_dict["id"]), exist_ok=True)
@@ -271,6 +275,10 @@ class YukonResourceRecord(ResourceRecord):
         if error := self.data.get("error"):
             raise tk.ValidationError(error)
 
+        if self.options["update_resource_dates_only"]:
+            self._insert_dates()
+            return {"success": True}
+
         result = super().ingest(context)
         redirect_map: RedirectMap = self.options.get("redirect_map")
         if redirect_map:
@@ -293,7 +301,7 @@ class YukonResourceRecord(ResourceRecord):
         return result
 
     def _insert_dates(self):
-        res = model.Resource.get(self.data["name"])
+        res = model.Resource.get(self.data["id"])
         res.metadata_modified = datetime.strptime(
             self.data["last_modified"], "%Y-%m-%d %H:%M:%S"
         )

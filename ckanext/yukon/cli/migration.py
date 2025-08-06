@@ -156,6 +156,13 @@ def parse_cookie(
     show_default=True,
     help="File to write Nginx redirect map.",
 )
+@click.option(
+    "-d",
+    "--update-resource-dates-only",
+    is_flag=True,
+    default=False,
+    help="Update only resource metadata dates (only applicable to resource entities).",
+)
 def migrate_data(  # noqa PLR0913
     zip_path: str,
     entity: tuple[str, ...],
@@ -164,6 +171,7 @@ def migrate_data(  # noqa PLR0913
     skip: int,
     take: int | None,
     redirect_map_path: Path,
+    update_resource_dates_only: bool,
 ):
     """Import CSVs packed in *zip_path* using CKAN’s ``ingest_import_records``.
 
@@ -205,6 +213,7 @@ def migrate_data(  # noqa PLR0913
                     "update_existing": True,
                     "cookies": cookie,
                     "headers": header,
+                    "update_resource_dates_only": update_resource_dates_only,
                 },
             }
 
@@ -231,6 +240,10 @@ def migrate_data(  # noqa PLR0913
                 log.exception("Import failed for %s", ent)
                 click.secho(f"Failed {ent}: {err}", fg="red")
                 failures.append(ent)
+
+        if update_resource_dates_only:
+            click.secho("Resource dates have been updated.", fg="green")
+            return
 
         # packages that need a dates upgrade only if their resource ran
         for resource_ent in resources_ran:
