@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import Any
 
 from alembic import context
@@ -25,7 +25,7 @@ target_metadata = metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-name = os.path.basename(os.path.dirname(__file__))
+name = Path(__file__).parent.name
 
 
 def include_object(

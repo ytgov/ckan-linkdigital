@@ -4,10 +4,14 @@ All non-private functions defined here are registered inside `tk.h` collection.
 """
 
 from __future__ import annotations
+
 import datetime
 import fnmatch
 import logging
-import ckan.plugins.toolkit as toolkit
+
+from ckan import types
+from ckan.plugins import toolkit as tk
+
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 
 from . import config
@@ -15,47 +19,41 @@ from . import config
 log = logging.getLogger(__name__)
 
 
-def get_all_groups():
-    """
-    Returns a list of all groups in CKAN.
-    """
+def get_all_groups() -> list[str]:
+    """Returns a list of all groups in CKAN."""
     try:
-        groups = toolkit.get_action("group_list")(
+        return tk.get_action("group_list")(
             {"ignore_auth": True}, {"all_fields": True}
         )  # Bypass auth
-        return groups
-    except toolkit.ObjectNotFound:
+    except tk.ObjectNotFound:
         return []
 
 
-def recently_updated_open_informations():
-    """
-    Returns a list of 3 recently updated open informations.
-    """
+def recently_updated_open_informations() -> list[dict[str, str]]:
+    """Returns a list of 3 recently updated open informations."""
     try:
-        result = toolkit.get_action("package_search")(
+        result = tk.get_action("package_search")(
             {"ignore_auth": True},
             {"fq": "type:information", "sort": "metadata_modified desc", "rows": 3},
         )  # Bypass auth
         # Drop all the fields except the ones we need: title, name and type
         packages = []
         for item in result["results"]:
-            package = {}
-            package["title"] = item["title"]
-            package["name"] = item["name"]
-            package["type"] = item["type"]
+            package = {
+                "title": item["title"],
+                "name": item["name"],
+                "type": item["type"],
+            }
             packages.append(package)
         return packages
-    except toolkit.ObjectNotFound:
+    except tk.ObjectNotFound:
         return []
 
 
 def recently_added_access_requests():
-    """
-    Returns a list of 3 recently added access requests.
-    """
+    """Returns a list of 3 recently added access requests."""
     try:
-        result = toolkit.get_action("package_search")(
+        result = tk.get_action("package_search")(
             {"ignore_auth": True},
             {"fq": "type:access-requests", "sort": "metadata_created desc", "rows": 3},
         )  # Bypass auth
@@ -68,27 +66,25 @@ def recently_added_access_requests():
             package["type"] = item["type"]
             packages.append(package)
         return packages
-    except toolkit.ObjectNotFound:
+    except tk.ObjectNotFound:
         return []
 
 
 def get_featured_datasets():
-    """
-    Returns a list of all featured datasets.
-    """
+    """Returns a list of all featured datasets."""
     try:
-        result = toolkit.get_action("package_search")(
+        result = tk.get_action("package_search")(
             {"ignore_auth": True}, {"fq": "is_featured:true", "rows": 1000}
         )  # Bypass auth
         return result["results"]
-    except toolkit.ObjectNotFound:
+    except tk.ObjectNotFound:
         return []
 
 
-def group_is_empty(data_dict, group_name, dataset_type):
-    """
-    Returns True if the group is empty, False otherwise.
-    """
+def group_is_empty(
+    data_dict: types.DataDict, group_name: str, dataset_type: str
+) -> bool:
+    """Returns True if the group is empty, False otherwise."""
     dataset_fields = scheming_get_dataset_schema(dataset_type)["dataset_fields"]
     group_fields = []
     for field in dataset_fields:
@@ -96,17 +92,13 @@ def group_is_empty(data_dict, group_name, dataset_type):
             if field["group_name"] == group_name:
                 if data_dict.get(field["field_name"]):
                     group_fields.append(field["field_name"])
-                if field["field_name"] == "tag_string":
-                    if data_dict.get("tags"):
-                        group_fields.append("tags")
-                if field["field_name"] == "groups_list":
-                    if data_dict.get("groups"):
-                        group_fields.append("groups")
+                if field["field_name"] == "tag_string" and data_dict.get("tags"):
+                    group_fields.append("tags")
+                if field["field_name"] == "groups_list" and data_dict.get("groups"):
+                    group_fields.append("groups")
         except KeyError:
             pass
-    if len(group_fields) == 0:
-        return True
-    return False
+    return len(group_fields) == 0
 
 
 def get_current_year():
@@ -114,8 +106,8 @@ def get_current_year():
     return datetime.datetime.now().year
 
 
-def dataset_type_title(dataset_type, plural=True):
-    """Convert dataset type to a human-readable title, supporting singular and plural."""
+def dataset_type_title(dataset_type: str, plural: bool = True) -> str:
+    """Convert dataset type to a human-readable title, supporting singular/plural."""
     mapping = {
         "pia-summaries": (
             "Privacy Impact Assessment summary",
@@ -133,9 +125,9 @@ def dataset_type_title(dataset_type, plural=True):
     return title_pair[1] if plural else title_pair[0]
 
 
-def dataset_type_menu_title(dataset_type):
+def dataset_type_menu_title(dataset_type: str) -> str:
     """Convert dataset type to a human-readable title for menus, translated."""
-    _ = toolkit._
+    _ = tk._
     mapping = {
         "pia-summaries": _("a PIA summary"),
         "information": _("open information"),
@@ -146,19 +138,18 @@ def dataset_type_menu_title(dataset_type):
 
 
 def add_matomo_siteid_to_context():
-    """
-    Adds the Matomo site ID to the template context.
+    """Adds the Matomo site ID to the template context.
+
     This is used for tracking purposes.
     """
     # Get the Matomo site ID from the CKAN configuration
-    matomo_siteid = toolkit.config.get("ckan.matomo_siteid", "1")
     # Return the Matomo site ID for direct use in templates
-    return matomo_siteid
+    return tk.config.get("ckan.matomo_siteid", "1")
 
 
 def yukon_allow_local_login() -> bool:
     """Check if IP is whitelisted for local login."""
-    ip = toolkit.request.headers.get(config.ip_header(), toolkit.request.remote_addr)
+    ip = tk.request.headers.get(config.ip_header(), tk.request.remote_addr)
 
     if not ip:
         log.warning("Cannot determine IP using %s header", config.ip_header())

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import ckan.plugins.toolkit as tk
 
@@ -8,4 +8,4 @@ Base = tk.BaseModel
 
 
 def now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
