@@ -1,34 +1,39 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable
+from typing import Any
 
-from ckan import authz, model
+from ckan import authz, model, types
 from ckan.lib import search
 from ckan.lib.search import rebuild
 from ckan.plugins import toolkit as tk
 
 log = logging.getLogger(__name__)
+FEATURED_DATASETS_COUNT = 3
 
 
 def is_user_editor_of_org(org_id: str, user_id: str) -> bool:
+    """Check if the user is an editor of the organization."""
     capacity = authz.users_role_for_group_or_org(org_id, user_id)
     return capacity == "editor"
 
 
 def is_user_admin_of_org(org_id: str, user_id: str) -> bool:
+    """Check if the user is an admin of the organization."""
     capacity = authz.users_role_for_group_or_org(org_id, user_id)
     return capacity == "admin"
 
 
 def is_user_sysadmin(user_id: str) -> bool:
+    """Check if the user is a sysadmin."""
     user = model.User.get(user_id)
     if user:
         return user.sysadmin
     return False
 
 
-def can_view_internal_data(user: model.User, org_id: str):
+def can_view_internal_data(user: str, org_id: str):
+    """Check if the user can view internal data for the given organization."""
     if not user:
         return False
 
@@ -42,7 +47,7 @@ def can_view_internal_data(user: model.User, org_id: str):
         return True
     if is_user_admin_of_org(org_id, user_id):
         return True
-    return is_user_editor_of_org(org_id, user_id)
+    return bool(is_user_editor_of_org(org_id, user_id))
 
 
 def _set_groups_list(context: Any, data_dict: dict[str, Any]):
@@ -52,12 +57,15 @@ def _set_groups_list(context: Any, data_dict: dict[str, Any]):
         if not isinstance(groups_list, list):
             groups_list = [groups_list]
 
+        data_dict.pop("groups_list")
         data_dict["groups"] = [{"id": group_id} for group_id in groups_list]
 
 
 @tk.side_effect_free
 @tk.chained_action
-def package_show(up_func: Callable, context: Any, data_dict: dict[str, Any]) -> Any:
+def package_show(
+    up_func: types.Action, context: types.Context, data_dict: types.DataDict
+) -> Any:
     user = context.get("user")
     result = up_func(context, data_dict)
     org_id = result["organization"]["id"]
@@ -70,7 +78,9 @@ def package_show(up_func: Callable, context: Any, data_dict: dict[str, Any]) -> 
 
 @tk.side_effect_free
 @tk.chained_action
-def package_search(up_func: Callable, context: Any, data_dict: dict[str, Any]) -> Any:
+def package_search(
+    up_func: types.Action, context: types.Context, data_dict: types.DataDict
+) -> Any:
     user = context.get("user")
     result = up_func(context, data_dict)
     pkg_dicts = result["results"]
@@ -88,7 +98,7 @@ def package_search(up_func: Callable, context: Any, data_dict: dict[str, Any]) -
 @tk.side_effect_free
 @tk.chained_action
 def current_package_list_with_resources(
-    up_func: Callable, context: Any, data_dict: dict[str, Any]
+    up_func: types.Action, context: types.Context, data_dict: types.DataDict
 ) -> Any:
     user = context.get("user")
     results = up_func(context, data_dict)
@@ -105,7 +115,9 @@ def current_package_list_with_resources(
 
 @tk.side_effect_free
 @tk.chained_action
-def package_create(up_func: Callable, context: Any, data_dict: dict[str, Any]) -> Any:
+def package_create(
+    up_func: types.Action, context: types.Context, data_dict: types.DataDict
+) -> Any:
     _set_groups_list(context, data_dict)
 
     return up_func(context, data_dict)
@@ -113,7 +125,9 @@ def package_create(up_func: Callable, context: Any, data_dict: dict[str, Any]) -
 
 @tk.side_effect_free
 @tk.chained_action
-def package_update(up_func: Callable, context: Any, data_dict: dict[str, Any]) -> Any:
+def package_update(
+    up_func: types.Action, context: types.Context, data_dict: types.DataDict
+) -> Any:
     _set_groups_list(context, data_dict)
 
     return up_func(context, data_dict)
@@ -142,7 +156,7 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
 
     # Extract dataset IDs from data_dict
     dataset_ids = data_dict.get("dataset_ids")
-    if not dataset_ids or len(dataset_ids) != 3:  # noqa: PLR2004
+    if not dataset_ids or len(dataset_ids) != FEATURED_DATASETS_COUNT:
         raise tk.ValidationError(
             {
                 "is_fetured": ["Exactly three dataset IDs or names must be provided."],

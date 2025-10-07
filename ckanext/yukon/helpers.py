@@ -9,7 +9,7 @@ import datetime
 import fnmatch
 import logging
 
-from ckan import model
+from ckan import model, types
 from ckan.plugins import toolkit as tk
 
 from ckanext.scheming.helpers import scheming_get_dataset_schema
@@ -19,7 +19,7 @@ from . import config
 log = logging.getLogger(__name__)
 
 
-def get_all_groups():
+def get_all_groups() -> list[str]:
     """Returns a list of all groups in CKAN."""
     try:
         groups = tk.get_action("group_list")(
@@ -31,7 +31,7 @@ def get_all_groups():
         return groups
 
 
-def recently_updated_open_informations():
+def recently_updated_open_informations() -> list[str]:
     """Returns a list of 3 recently updated open informations."""
     try:
         result = tk.get_action("package_search")(
@@ -124,7 +124,7 @@ def get_featured_datasets():
         return featured_packages
 
 
-def group_is_empty(data_dict: model.Package, group_name: str, dataset_type: str):
+def group_is_empty(data_dict: types.DataDict, group_name: str, dataset_type: str):
     """Returns True if the group is empty, False otherwise."""
     dataset_fields = scheming_get_dataset_schema(dataset_type)["dataset_fields"]
     group_fields = []
