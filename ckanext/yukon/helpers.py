@@ -9,7 +9,7 @@ import datetime
 import fnmatch
 import logging
 
-from ckan import types
+from ckan import model, types
 from ckan.plugins import toolkit as tk
 
 from ckanext.scheming.helpers import scheming_get_dataset_schema
@@ -22,11 +22,13 @@ log = logging.getLogger(__name__)
 def get_all_groups() -> list[str]:
     """Returns a list of all groups in CKAN."""
     try:
-        return tk.get_action("group_list")(
+        groups = tk.get_action("group_list")(
             {"ignore_auth": True}, {"all_fields": True}
         )  # Bypass auth
     except tk.ObjectNotFound:
         return []
+    else:
+        return groups
 
 
 def recently_updated_open_informations() -> list[dict[str, str]]:
@@ -45,9 +47,10 @@ def recently_updated_open_informations() -> list[dict[str, str]]:
                 "type": item["type"],
             }
             packages.append(package)
-        return packages
     except tk.ObjectNotFound:
         return []
+    else:
+        return packages
 
 
 def recently_added_access_requests():
@@ -65,25 +68,64 @@ def recently_added_access_requests():
             package["name"] = item["name"]
             package["type"] = item["type"]
             packages.append(package)
-        return packages
     except tk.ObjectNotFound:
         return []
+    else:
+        return packages
 
 
 def get_featured_datasets():
     """Returns a list of all featured datasets."""
     try:
+        # First try the search index
         result = tk.get_action("package_search")(
-            {"ignore_auth": True}, {"fq": "is_featured:true", "rows": 1000}
-        )  # Bypass auth
-        return result["results"]
-    except tk.ObjectNotFound:
+            {"ignore_auth": True},
+            {
+                "fq": "is_featured:true AND type:data",
+                "rows": 1000,
+                "sort": "metadata_created desc",
+            },
+        )
+
+        # If search returns results, use them
+        if result["results"]:
+            return result["results"]
+
+        # Fallback: Query database directly for packages with is_featured extra
+        featured_packages = []
+
+        # Get all packages with is_featured extra set to True
+        extras_query = (
+            model.Session.query(model.PackageExtra)
+            .filter(
+                model.PackageExtra.key == "is_featured",
+                model.PackageExtra.value == "True",
+            )
+            .all()
+        )
+
+        for extra in extras_query:
+            try:
+                # Get the full package data
+                package_dict = tk.get_action("package_show")(
+                    {"ignore_auth": True}, {"id": extra.package_id}
+                )
+                # Only include if it`s a data type package
+                if package_dict.get("type") == "data":
+                    featured_packages.append(package_dict)
+            except Exception:  # noqa: BLE001, PERF203
+                # Skip packages that can"t be shown
+                log.warning('Skip package: %s  that can"t be shown', extra.package_id)
+                continue
+    except Exception:  # noqa: BLE001
+        # Log the error for debugging
+        log.exception("Error getting featured datasets.")
         return []
+    else:
+        return featured_packages
 
 
-def group_is_empty(
-    data_dict: types.DataDict, group_name: str, dataset_type: str
-) -> bool:
+def group_is_empty(data_dict: types.DataDict, group_name: str, dataset_type: str):
     """Returns True if the group is empty, False otherwise."""
     dataset_fields = scheming_get_dataset_schema(dataset_type)["dataset_fields"]
     group_fields = []
@@ -96,7 +138,7 @@ def group_is_empty(
                     group_fields.append("tags")
                 if field["field_name"] == "groups_list" and data_dict.get("groups"):
                     group_fields.append("groups")
-        except KeyError:
+        except KeyError:  # noqa: PERF203
             pass
     return len(group_fields) == 0
 
@@ -106,8 +148,11 @@ def get_current_year():
     return datetime.datetime.now().year
 
 
-def dataset_type_title(dataset_type: str, plural: bool = True) -> str:
-    """Convert dataset type to a human-readable title, supporting singular/plural."""
+def dataset_type_title(dataset_type: str, plural: bool = True):
+    """Convert dataset type to a human-readable title.
+
+    Supporting singular and plural.
+    """
     mapping = {
         "pia-summaries": (
             "Privacy Impact Assessment summary",

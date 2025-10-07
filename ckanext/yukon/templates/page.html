@@ -9,6 +9,17 @@
 
     {%- block page -%}
 
+        {%- block title -%}
+            {%- block subtitle %}{% endblock -%}
+            {%- if self.subtitle()|trim %} {{ g.template_title_delimiter }} {% endif -%}
+            {% if request.environ.CKAN_LANG == 'fr' %}
+                Gouvernement ouvert - Gouvernement du Yukon
+            {% else %}
+                {{ g.site_title }}
+            {% endif %}
+        {%- endblock -%}
+
+
         {% block skip %}
             <div class="visually-hidden-focusable">
                 <a href="#content">{{ _('Skip to main content') }}</a>
