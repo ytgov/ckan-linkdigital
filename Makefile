@@ -33,7 +33,7 @@
 # CKAN core supports this short syntax. But internally it's unfolds into
 ## remote-ckan = https://github.com/ckan/ckan tag ckan-2.10.4
 # if you want to use CKAN fork or specific commit, use this full specification
-ckan_tag = ckan-2.11.3
+ckan_tag = ckan-2.11.4
 
 # items from this list are installed by `make full-upgrade` and `make sync
 # install`. If you specify remote, but did not added extension to this list, it
