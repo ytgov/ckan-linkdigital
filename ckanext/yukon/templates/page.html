@@ -7,8 +7,6 @@
 
     {% extends "base.html" %}
 
-    {%- block page -%}
-
         {%- block title -%}
             {%- block subtitle %}{% endblock -%}
             {%- if self.subtitle()|trim %} {{ g.template_title_delimiter }} {% endif -%}
@@ -19,6 +17,7 @@
             {% endif %}
         {%- endblock -%}
 
+    {%- block page -%}
 
         {% block skip %}
             <div class="visually-hidden-focusable">
