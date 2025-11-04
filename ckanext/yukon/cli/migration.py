@@ -5,8 +5,8 @@ import logging
 import mimetypes
 import tempfile
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import click
 from werkzeug.datastructures import FileStorage

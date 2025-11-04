@@ -3,13 +3,14 @@ from __future__ import annotations
 import csv
 import dataclasses
 import logging
-import os
 import time
 import uuid
+from collections.abc import Iterable
 from datetime import datetime
 from http import HTTPStatus
 from io import StringIO
-from typing import Any, Iterable
+from pathlib import Path
+from typing import Any
 
 import requests
 from sqlalchemy import and_
@@ -223,7 +224,9 @@ class YukonResourceRecord(ResourceRecord):
 
         if (data_dict.get("url_type") or "") == "upload":
             uploader = get_resource_uploader(data_dict)
-            os.makedirs(uploader.get_directory(data_dict["id"]), exist_ok=True)
+            Path(uploader.get_directory(data_dict["id"])).mkdir(
+                parents=True, exist_ok=True
+            )
             while True:
                 try:
                     response = requests.get(
@@ -267,7 +270,7 @@ class YukonResourceRecord(ResourceRecord):
                         RETRY_DELAY,
                     )
                 time.sleep(RETRY_DELAY)
-            with open(uploader.get_path(data_dict["id"]), "wb") as f:
+            with Path(uploader.get_path(data_dict["id"])).open("wb") as f:
                 f.write(response.content)
         return data_dict
 

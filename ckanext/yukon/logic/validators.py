@@ -29,8 +29,12 @@ from __future__ import annotations
 #         raise tk.StopOnError
 
 
-# def yukon_user_name_validator(key: types.FlattenKey, data: types.FlattenDataDict,
-#                         errors: types.FlattenErrorDict, context: types.Context) -> Any:
+# def yukon_user_name_validator(
+#     key: types.FlattenKey,
+#     data: types.FlattenDataDict,
+#     errors: types.FlattenErrorDict,
+#     context: types.Context,
+# ) -> Any:
 #     '''
 #         Copy of the original 'user_name_validator' CKAN Validator,
 #         but without a part that restrict name changing.

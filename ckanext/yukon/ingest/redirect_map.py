@@ -17,7 +17,7 @@ class RedirectMap:
             self._pairs.append((old, new))
 
     def write(self, path: str | Path) -> None:
-        with open(path, "w", encoding="utf-8") as fp:
+        with Path(path).open("w", encoding="utf-8") as fp:
             for src, dst in self._pairs:
                 fp.write(f"{src} {dst};\n")
 
