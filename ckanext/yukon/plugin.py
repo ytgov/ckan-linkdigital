@@ -46,7 +46,12 @@ from . import helpers, implementations
 from .logic import action, auth
 
 
-@tk.blanket.auth_functions({"package_delete": auth.package_delete_sysadmin_only})
+@tk.blanket.auth_functions(
+    {
+        "package_delete": auth.package_delete_sysadmin_only,
+        "yukon_matomo_sync_usage_data": auth.yukon_matomo_sync_usage_data_sysadmin_only,
+    }
+)
 @tk.blanket.actions(
     {
         "package_show": action.package_show,
@@ -57,6 +62,7 @@ from .logic import action, auth
         "package_create": action.package_create,
         "package_update": action.package_update,
         "package_set_featured": action.package_set_featured,
+        "yukon_matomo_sync_usage_data": action.yukon_matomo_sync_usage_data,
     }
 )
 @tk.blanket.helpers(
@@ -73,6 +79,7 @@ from .logic import action, auth
         "dataset_type_menu_title": helpers.dataset_type_menu_title,
         "matomo_siteid": helpers.add_matomo_siteid_to_context,
         "yukon_allow_local_login": helpers.yukon_allow_local_login,
+        "get_year_facet_items": helpers.get_year_facet_items,
     }
 )
 @tk.blanket.blueprints
@@ -101,6 +108,7 @@ class YukonPlugin(
     # compact
     p.implements(p.ITranslation)
     p.implements(p.IConfigurer)
+    p.implements(p.IFacets)
 
     # ITranslation
     def i18n_locales(self):
@@ -119,3 +127,18 @@ class YukonPlugin(
 
         # register assets folder. You must add `webassets.yml` into this folder
         tk.add_resource("assets", "yukon")
+
+    # IFacets
+    def dataset_facets(self, facets_dict, package_type):
+        """Add year_published to the dataset facets."""
+        facets_dict['year_published'] = toolkit._('Year published')
+        return facets_dict
+
+    def organization_facets(self, facets_dict, organization_type, package_type):
+        """Add year_published to the organization facets."""
+        facets_dict['year_published'] = toolkit._('Year published')
+        return facets_dict
+
+    def group_facets(self, facets_dict, group_type, package_type):
+        """Return facets for groups."""
+        return facets_dict

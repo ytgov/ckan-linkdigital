@@ -46,6 +46,7 @@ ext_list = \
 	saml \
 	xloader \
 	ingest \
+	downloadall \
 	harvest
 
 # information about extension source. Format is `ALTERNATIVE-NAME = URL TYPE
@@ -65,6 +66,7 @@ remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
 remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.9
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 remote-harvest = https://github.com/ckan/ckanext-harvest.git tag v1.6.1
+remote-downloadall = https://github.com/datopian/ckanext-downloadall.git branch yukon-2.11.0
 
 # extras installed with the extension. Produce `pip install
 # 'ckanext-googleanalytics[requirements]'`-like instructions.
