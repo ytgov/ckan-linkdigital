@@ -33,7 +33,7 @@ def get_all_groups() -> list[str]:
             log.debug("No user in context; returning empty group list")
             return []
 
-        import ckan.model as model
+        from ckan import model
 
         # Determine the current user object. Templates often set `c.userobj`,
         # otherwise `c.user` may be a username.
@@ -66,7 +66,7 @@ def get_all_groups() -> list[str]:
                     )
                     # Check if our user is in the members list
                     for member in members:
-                        member_id = member[0] if isinstance(member, (list, tuple)) else member.get('id')
+                        member_id = member[0] if isinstance(member, list | tuple) else member.get('id')
                         if str(member_id) == str(user_obj.id) or str(member_id) == str(user_obj.name):
                             user_groups.append(group)
                             log.debug('User %s is member of group %s', user_obj.name, group['name'])
@@ -105,9 +105,9 @@ def get_all_groups() -> list[str]:
                         continue
                     try:
                         if hasattr(cand, 'id'):
-                            cand_val = getattr(cand, 'id')
+                            cand_val = cand.id
                         elif hasattr(cand, 'name'):
-                            cand_val = getattr(cand, 'name')
+                            cand_val = cand.name
                         else:
                             cand_val = cand
                     except Exception:
@@ -301,17 +301,15 @@ def add_matomo_siteid_to_context():
     # Get the Matomo site ID from the CKAN configuration.
     # Falls back to ckanext.yukon.matomo.site_id so a single env var
     # (CKANEXT__YUKON__MATOMO__SITE_ID) is sufficient.
-    matomo_siteid = tk.config.get(
+    return tk.config.get(
         'ckan.matomo_siteid',
         tk.config.get('ckanext.yukon.matomo.site_id', '1')
     )
     # Return the Matomo site ID for direct use in templates
-    return matomo_siteid
 
 
 def get_year_facet_items(facet_name, search_facets):
-    """
-    Get facet items for the year_published facet, sorted chronologically (newest first).
+    """Get facet items for the year_published facet, sorted chronologically (newest first).
 
     This overrides the default facet sorting which is by count, and instead sorts
     by year in descending order (most recent years first).
@@ -328,9 +326,8 @@ def get_year_facet_items(facet_name, search_facets):
 
     # Sort items by year in descending order (newest first)
     # Each item has 'name' (the year) and 'count' (number of datasets)
-    sorted_items = sorted(items, key=lambda x: x.get('name', ''), reverse=True)
+    return sorted(items, key=lambda x: x.get('name', ''), reverse=True)
 
-    return sorted_items
 
 
 def yukon_allow_local_login() -> bool:

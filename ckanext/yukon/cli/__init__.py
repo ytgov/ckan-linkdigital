@@ -13,13 +13,11 @@ from __future__ import annotations
 import click
 
 from ckan import model
-
-from ckanext.yukon.cli.migration import data_migration
 from ckan.cli import load_config
 from ckan.config.middleware import make_app
 
-from .. import matomo_sync
-from .. import matomo_traffic
+from ckanext.yukon import matomo_sync, matomo_traffic
+from ckanext.yukon.cli.migration import data_migration
 
 __all__ = ["yukon", "yukon_matomo"]
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
 import json
 import random
@@ -9,7 +8,6 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import click
-
 
 SUPPORTED_TYPES = ["data", "information", "access-requests", "pia-summaries"]
 TRACKING_USER_AGENT = (
@@ -72,9 +70,7 @@ def _fetch_packages_from_api(ckan_url, api_token=None, dataset_refs=None):
     if dataset_refs:
         for dataset_ref in dataset_refs:
             req = Request(
-                "{}/api/3/action/package_show?id={}".format(
-                    ckan_url, dataset_ref
-                ),
+                f"{ckan_url}/api/3/action/package_show?id={dataset_ref}",
                 headers=headers,
             )
             with urlopen(req, timeout=30) as response:
@@ -314,6 +310,7 @@ def main(
     if config_path:
         from ckan.cli import load_config
         from ckan.config.middleware import make_app
+
         from ckanext.yukon import matomo_sync
 
         config_dict = load_config(config_path)

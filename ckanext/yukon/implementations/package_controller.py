@@ -10,7 +10,8 @@ class PackageController(p.SingletonPlugin):
 
     def before_dataset_index(self, pkg_dict):
         """Add year_published field to the search index and exclude
-        downloadall-generated ZIP resources from the res_format facet."""
+        downloadall-generated ZIP resources from the res_format facet.
+        """
         if pkg_dict.get('metadata_created'):
             try:
                 # Extract year from metadata_created timestamp

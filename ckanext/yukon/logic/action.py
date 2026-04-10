@@ -4,8 +4,6 @@ import logging
 from typing import Any
 
 from ckan import authz, model, types
-from ckan.lib import search
-from ckan.lib.search import rebuild
 from ckan.plugins import toolkit as tk
 
 log = logging.getLogger(__name__)
@@ -60,9 +58,7 @@ def _set_groups_list(context: types.Context, data_dict: types.DataDict):
 
     gl = data_dict.get("groups_list")
     empty = False
-    if isinstance(gl, str) and not gl.strip():
-        empty = True
-    elif isinstance(gl, (list, tuple)) and not any(bool(x) for x in gl):
+    if isinstance(gl, str) and not gl.strip() or isinstance(gl, list | tuple) and not any(bool(x) for x in gl):
         empty = True
     if empty:
         raise tk.ValidationError({"groups_list": ["Missing value"]})
@@ -163,8 +159,7 @@ def package_update(
 
 
 def yukon_matomo_sync_usage_data(context, data_dict):
-    """
-    Sync usage counters from Matomo into package extras.
+    """Sync usage counters from Matomo into package extras.
 
     This action is intended for scheduled/API-triggered syncs and defaults to
     a conservative batch size to avoid overloading Matomo.
@@ -192,7 +187,7 @@ def yukon_matomo_sync_usage_data(context, data_dict):
 
     if isinstance(dataset_refs, str):
         dataset_refs = [dataset_refs]
-    elif not isinstance(dataset_refs, (list, tuple)):
+    elif not isinstance(dataset_refs, list | tuple):
         raise tk.ValidationError(
             {"dataset_refs": ["Must be a string or a list of strings"]}
         )
@@ -212,7 +207,7 @@ def yukon_matomo_sync_usage_data(context, data_dict):
 
     if max_limit > 0 and limit is not None and limit > max_limit:
         raise tk.ValidationError(
-            {"limit": ["Must be less than or equal to {}".format(max_limit)]}
+            {"limit": [f"Must be less than or equal to {max_limit}"]}
         )
     if offset is not None and offset < 0:
         raise tk.ValidationError(
@@ -348,8 +343,8 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
         # Manually update search index for affected packages
         # This ensures search queries work without updating metadata_modified
         # We need to do this AFTER commit so package_show returns updated extras
-        import ckan.lib.search as search
-        package_ids_to_reindex = set(previous_featured_ids) | set([package_objects[did].id for did in dataset_ids])
+        from ckan.lib import search
+        package_ids_to_reindex = set(previous_featured_ids) | {package_objects[did].id for did in dataset_ids}
 
         log.info(f"Reindexing {len(package_ids_to_reindex)} packages in search index")
 
@@ -394,8 +389,7 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
 
 
 def _update_package_extra(package_obj, key, value):
-    """
-    Helper function to update a package extra field without changing
+    """Helper function to update a package extra field without changing
     metadata_modified.
 
     :param package_obj: The package object

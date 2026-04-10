@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
-import copy
 import json
 import mimetypes
 import os
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import quote_plus
 
 import click
 import requests
-
 
 SOURCE_CKAN_URL = "https://open.yukon.ca"
 SUPPORTED_TYPES = ["data", "information", "access-requests", "pia-summaries"]
@@ -257,7 +253,7 @@ def _resource_download_url(resource):
     resource_url = resource.get("url")
     if not resource_url:
         return None
-    if resource_url.startswith("http://") or resource_url.startswith("https://"):
+    if resource_url.startswith(("http://", "https://")):
         return resource_url
     return f"{SOURCE_CKAN_URL}{resource_url}"
 
