@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import logging
+import traceback
 from typing import Any
 
 from ckan import authz, model, types
+from ckan.lib import search
 from ckan.plugins import toolkit as tk
+
+from ckanext.yukon import matomo_sync
 
 log = logging.getLogger(__name__)
 FEATURED_DATASETS_COUNT = 3
@@ -56,7 +60,7 @@ def _set_groups_list(context: types.Context, data_dict: types.DataDict):
     if "groups_list" not in data_dict:
         return
 
-    gl = data_dict.get("groups_list")
+    gl: str | list[Any] | tuple[Any] = data_dict.get("groups_list", [])
     empty = False
     if isinstance(gl, str) and not gl.strip() or isinstance(gl, list | tuple) and not any(bool(x) for x in gl):
         empty = True
@@ -72,7 +76,7 @@ def _set_groups_list(context: types.Context, data_dict: types.DataDict):
     for group_id in [g for g in groups_list if g]:
         try:
             group = tk.get_action("group_show")(context, {"id": group_id})
-        except Exception:
+        except Exception:  # noqa: S112
             # Ignore invalid group ids rather than crashing the update
             continue
         groups.append({key: group.get(key) for key in ("id", "name", "title")})
@@ -82,10 +86,8 @@ def _set_groups_list(context: types.Context, data_dict: types.DataDict):
 
 @tk.side_effect_free
 @tk.chained_action
-def package_show(
-    up_func: types.Action, context: types.Context, data_dict: types.DataDict
-) -> Any:
-    user = context.get("user")
+def package_show(up_func: types.Action, context: types.Context, data_dict: types.DataDict) -> Any:
+    user = context["user"]
     result = up_func(context, data_dict)
     package = model.Package.get(result["id"])
     if package:
@@ -103,10 +105,8 @@ def package_show(
 
 @tk.side_effect_free
 @tk.chained_action
-def package_search(
-    up_func: types.Action, context: types.Context, data_dict: types.DataDict
-) -> Any:
-    user = context.get("user")
+def package_search(up_func: types.Action, context: types.Context, data_dict: types.DataDict) -> Any:
+    user = context["user"]
     result = up_func(context, data_dict)
     pkg_dicts = result["results"]
 
@@ -125,7 +125,7 @@ def package_search(
 def current_package_list_with_resources(
     up_func: types.Action, context: types.Context, data_dict: types.DataDict
 ) -> Any:
-    user = context.get("user")
+    user = context["user"]
     results = up_func(context, data_dict)
 
     for result in results:
@@ -140,9 +140,7 @@ def current_package_list_with_resources(
 
 @tk.side_effect_free
 @tk.chained_action
-def package_create(
-    up_func: types.Action, context: types.Context, data_dict: types.DataDict
-) -> Any:
+def package_create(up_func: types.Action, context: types.Context, data_dict: types.DataDict) -> Any:
     _set_groups_list(context, data_dict)
 
     return up_func(context, data_dict)
@@ -150,21 +148,18 @@ def package_create(
 
 @tk.side_effect_free
 @tk.chained_action
-def package_update(
-    up_func: types.Action, context: types.Context, data_dict: types.DataDict
-) -> Any:
+def package_update(up_func: types.Action, context: types.Context, data_dict: types.DataDict) -> Any:
     _set_groups_list(context, data_dict)
 
     return up_func(context, data_dict)
 
 
-def yukon_matomo_sync_usage_data(context, data_dict):
+def yukon_matomo_sync_usage_data(context: types.Context, data_dict: dict[str, Any]):
     """Sync usage counters from Matomo into package extras.
 
     This action is intended for scheduled/API-triggered syncs and defaults to
     a conservative batch size to avoid overloading Matomo.
     """
-    from . import matomo_sync
 
     tk.check_access("yukon_matomo_sync_usage_data", context, data_dict)
 
@@ -188,33 +183,25 @@ def yukon_matomo_sync_usage_data(context, data_dict):
     if isinstance(dataset_refs, str):
         dataset_refs = [dataset_refs]
     elif not isinstance(dataset_refs, list | tuple):
-        raise tk.ValidationError(
-            {"dataset_refs": ["Must be a string or a list of strings"]}
-        )
+        raise tk.ValidationError({"dataset_refs": ["Must be a string or a list of strings"]})
 
     # Keep API-triggered runs conservative unless the caller scopes them.
     if not dataset_refs and limit is None:
         limit = 25
 
     # Optional hard ceiling from config. 0 or unset means unlimited.
-    max_limit = tk.config.get(
-        "ckanext.yukon.matomo.api_sync_max_limit", 0
-    )
+    max_limit = tk.config.get("ckanext.yukon.matomo.api_sync_max_limit", 0)
     try:
         max_limit = int(max_limit)
     except (TypeError, ValueError):
         max_limit = 0
 
     if max_limit > 0 and limit is not None and limit > max_limit:
-        raise tk.ValidationError(
-            {"limit": [f"Must be less than or equal to {max_limit}"]}
-        )
+        raise tk.ValidationError({"limit": [f"Must be less than or equal to {max_limit}"]})
     if offset is not None and offset < 0:
-        raise tk.ValidationError(
-            {"offset": ["Must be greater than or equal to 0"]}
-        )
+        raise tk.ValidationError({"offset": ["Must be greater than or equal to 0"]})
 
-    summary = matomo_sync.sync_usage_data(
+    summary: dict[str, Any] = matomo_sync.sync_usage_data(
         dry_run=dry_run,
         limit=limit,
         offset=offset,
@@ -262,9 +249,7 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
     package_objects = {}  # Store package objects for later use
     for dataset_id in dataset_ids:
         try:
-            dataset = tk.get_action("package_show")(
-                {"ignore_auth": True}, {"id": dataset_id}
-            )
+            dataset = tk.get_action("package_show")({"ignore_auth": True}, {"id": dataset_id})
             # Check if the dataset type is 'data'
             if dataset.get("type") != "data":
                 invalid_type_datasets.append(dataset_id)
@@ -279,22 +264,12 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
 
     if non_existent_datasets:
         raise tk.ValidationError(
-            {
-                "is_featured": [
-                    f"The following datasets do not exist: "
-                    f"{', '.join(non_existent_datasets)}"
-                ]
-            }
+            {"is_featured": [f"The following datasets do not exist: {', '.join(non_existent_datasets)}"]}
         )
 
     if invalid_type_datasets:
         raise tk.ValidationError(
-            {
-                "is_featured": [
-                    f"The following datasets are not of type 'data': "
-                    f"{', '.join(invalid_type_datasets)}"
-                ]
-            }
+            {"is_featured": [f"The following datasets are not of type 'data': {', '.join(invalid_type_datasets)}"]}
         )
 
     try:
@@ -343,21 +318,19 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
         # Manually update search index for affected packages
         # This ensures search queries work without updating metadata_modified
         # We need to do this AFTER commit so package_show returns updated extras
-        from ckan.lib import search
+
         package_ids_to_reindex = set(previous_featured_ids) | {package_objects[did].id for did in dataset_ids}
 
         log.info(f"Reindexing {len(package_ids_to_reindex)} packages in search index")
 
         # Get the search index backend
-        search_backend = search.index_for('package')
+        search_backend = search.index_for("package")
 
         for pkg_id in package_ids_to_reindex:
             try:
                 # Fetch the updated package data after commit
-                package_dict = tk.get_action('package_show')(
-                    {'ignore_auth': True}, {'id': pkg_id}
-                )
-                is_featured_value = package_dict.get('is_featured', 'NOT_SET')
+                package_dict = tk.get_action("package_show")({"ignore_auth": True}, {"id": pkg_id})
+                is_featured_value = package_dict.get("is_featured", "NOT_SET")
                 log.info(f"Reindexing package {pkg_id}, is_featured={is_featured_value}")
 
                 # Update the search index with the current package data
@@ -365,7 +338,7 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
                 log.info(f"Successfully reindexed package {pkg_id}")
             except Exception as e:
                 log.error(f"Failed to reindex package {pkg_id}: {e}")
-                import traceback
+
                 log.error(traceback.format_exc())
                 # Continue with other packages even if one fails
                 continue
@@ -374,21 +347,16 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
         search_backend.commit()
         log.info("Search index committed")
 
-        return {
-            "success": True,
-            "message": "Featured datasets updated successfully."
-        }
+        return {"success": True, "message": "Featured datasets updated successfully."}
     except Exception as e:  # noqa: BLE001
         # Rollback any changes
         model.repo.rollback()
-        raise tk.ValidationError(
-            {"is_featured": [f"Failed to set featured datasets: {str(e)}"]}
-        ) from e
+        raise tk.ValidationError({"is_featured": [f"Failed to set featured datasets: {str(e)}"]}) from e
     else:
         return {"success": True, "message": "Featured datasets updated successfully."}
 
 
-def _update_package_extra(package_obj, key, value):
+def _update_package_extra(package_obj: model.Package, key: str, value: Any):
     """Helper function to update a package extra field without changing
     metadata_modified.
 
@@ -396,16 +364,13 @@ def _update_package_extra(package_obj, key, value):
     :param key: The extra field key
     :param value: The new value for the extra field
     """
-    import logging
+
     log = logging.getLogger(__name__)
 
     log.info(f"Updating package {package_obj.id} extra {key} to {value}")
 
     # Try to find the specific extra we want to update
-    existing_extra = model.Session.query(model.PackageExtra).filter_by(
-        package_id=package_obj.id,
-        key=key
-    ).first()
+    existing_extra = model.Session.query(model.PackageExtra).filter_by(package_id=package_obj.id, key=key).first()
 
     if existing_extra:
         log.info(f"Found existing extra {key} = {existing_extra.value}")
@@ -413,31 +378,25 @@ def _update_package_extra(package_obj, key, value):
         # This ensures the search index can properly filter on the field
         old_value = existing_extra.value
         existing_extra.value = value
-        log.info(f"Updated extra {key} from {old_value} to {value}")
+        log.info("Updated extra %s from %s to %s", key, old_value, value)
     else:
         log.info(f"No existing extra {key} found, creating new one")
         # Always create the extra, even if value is 'False'
-        new_extra = model.PackageExtra(
-            package_id=package_obj.id,
-            key=key,
-            value=value
-        )
+        new_extra = model.PackageExtra(package_id=package_obj.id, key=key, value=value)
         model.Session.add(new_extra)
-        log.info(f"Added new extra: {key} = {value}")
+        log.info("Added new extra: %s = %s", key, value)
 
     # Flush to ensure the change is in the session
     model.Session.flush()
+
     log.info("Session flushed")
 
     # Verify the extra was created/updated
-    verify_extra = model.Session.query(model.PackageExtra).filter_by(
-        package_id=package_obj.id,
-        key=key
-    ).first()
+    verify_extra = model.Session.query(model.PackageExtra).filter_by(package_id=package_obj.id, key=key).first()
 
     if verify_extra:
-        log.info(f"Verification: extra {key} = {verify_extra.value}")
+        log.info("Verification: extra %s = %s", key, verify_extra.value)
     else:
-        log.warning(f"Verification: extra {key} not found after update!")
+        log.warning("Verification: extra %s not found after update!", key)
 
-    log.info(f"Package {package_obj.id} extra {key} update completed")
+    log.info("Package %s extra %s update completed", package_obj.id, key)

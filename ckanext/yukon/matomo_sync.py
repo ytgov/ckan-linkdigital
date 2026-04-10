@@ -1,4 +1,3 @@
-
 import calendar
 import contextlib
 import datetime
@@ -20,33 +19,17 @@ USAGE_EXTRA_KEYS = ["visits", "downloads", "visit_90_days", "download_90_days"]
 
 class MatomoClient:
     def __init__(self):
-        self.base_url = tk.config.get(
-            "ckanext.yukon.matomo.api_url", ""
-        ).strip()
-        self.site_id = tk.config.get(
-            "ckanext.yukon.matomo.site_id", ""
-        ).strip()
-        self.token_auth = tk.config.get(
-            "ckanext.yukon.matomo.token_auth", ""
-        ).strip()
-        self.timeout = int(
-            tk.config.get(
-                "ckanext.yukon.matomo.timeout_seconds", 20
-            )
-        )
+        self.base_url = tk.config.get("ckanext.yukon.matomo.api_url", "").strip()
+        self.site_id = tk.config.get("ckanext.yukon.matomo.site_id", "").strip()
+        self.token_auth = tk.config.get("ckanext.yukon.matomo.token_auth", "").strip()
+        self.timeout = int(tk.config.get("ckanext.yukon.matomo.timeout_seconds", 20))
 
         if not self.base_url:
-            raise tk.ValidationError(
-                "Missing config: ckanext.yukon.matomo.api_url"
-            )
+            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.api_url")
         if not self.site_id:
-            raise tk.ValidationError(
-                "Missing config: ckanext.yukon.matomo.site_id"
-            )
+            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.site_id")
         if not self.token_auth:
-            raise tk.ValidationError(
-                "Missing config: ckanext.yukon.matomo.token_auth"
-            )
+            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.token_auth")
 
         self.base_url = self.base_url.rstrip("/")
 
@@ -75,7 +58,9 @@ class MatomoClient:
         conn = self._http_conn()
         try:
             conn.request(
-                "POST", path, body=body,
+                "POST",
+                path,
+                body=body,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             resp = conn.getresponse()
@@ -84,9 +69,7 @@ class MatomoClient:
             conn.close()
         data = json.loads(raw)
         if isinstance(data, dict) and data.get("result") == "error":
-            raise tk.ValidationError(
-                "Matomo API error: {}".format(data.get("message"))
-            )
+            raise tk.ValidationError("Matomo API error: {}".format(data.get("message")))
         return data
 
     def _bulk_call(self, requests_payload):
@@ -106,7 +89,9 @@ class MatomoClient:
         conn = self._http_conn()
         try:
             conn.request(
-                "POST", path, body=encoded_body,
+                "POST",
+                path,
+                body=encoded_body,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             resp = conn.getresponse()
@@ -115,9 +100,7 @@ class MatomoClient:
             conn.close()
         data = json.loads(raw)
         if isinstance(data, dict) and data.get("result") == "error":
-            raise tk.ValidationError(
-                "Matomo API error: {}".format(data.get("message"))
-            )
+            raise tk.ValidationError("Matomo API error: {}".format(data.get("message")))
         return data
 
     def _visits_payload(self, page_url, periods):
@@ -272,11 +255,7 @@ def _period_chunks(start_date, end_date):
     current = start_date
 
     while current <= end_date:
-        if (
-            current.day == 1
-            and current.month == 1
-            and datetime.date(current.year, 12, 31) <= end_date
-        ):
+        if current.day == 1 and current.month == 1 and datetime.date(current.year, 12, 31) <= end_date:
             chunks.append(("year", str(current.year)))
             current = datetime.date(current.year + 1, 1, 1)
             continue
@@ -322,11 +301,7 @@ def _sum_metric_for_urls(records, candidate_urls, metric_keys):
         if not row_urls:
             continue
 
-        if any(
-            row_url in candidates
-            or any(c in row_url or row_url in c for c in candidates)
-            for row_url in row_urls
-        ):
+        if any(row_url in candidates or any(c in row_url or row_url in c for c in candidates) for row_url in row_urls):
             for metric_key in metric_keys:
                 value = row.get(metric_key)
                 if value is None:
@@ -384,11 +359,7 @@ def _get_package_by_ref(dataset_ref):
     if package and package.state == "active":
         return package
 
-    package = (
-        model.Session.query(model.Package)
-        .filter_by(name=dataset_ref, state="active")
-        .first()
-    )
+    package = model.Session.query(model.Package).filter_by(name=dataset_ref, state="active").first()
     if package:
         return package
 
@@ -396,11 +367,7 @@ def _get_package_by_ref(dataset_ref):
 
 
 def _upsert_extra(package_id, key, value):
-    existing = (
-        model.Session.query(model.PackageExtra)
-        .filter_by(package_id=package_id, key=key)
-        .first()
-    )
+    existing = model.Session.query(model.PackageExtra).filter_by(package_id=package_id, key=key).first()
     value = str(value)
     if existing:
         if existing.value != value:
@@ -408,9 +375,7 @@ def _upsert_extra(package_id, key, value):
             return True
         return False
 
-    model.Session.add(
-        model.PackageExtra(package_id=package_id, key=key, value=value)
-    )
+    model.Session.add(model.PackageExtra(package_id=package_id, key=key, value=value))
     return True
 
 
@@ -470,12 +435,10 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
     # scanning raw logs per dataset (slow segment queries).
     periods_3y = _period_chunks(three_year_start, end_date)
     periods_90d = _period_chunks(last_90_start, end_date)
-    log.info("Matomo sync prefetching downloads: 3y=%s periods, 90d=%s periods",
-             len(periods_3y), len(periods_90d))
+    log.info("Matomo sync prefetching downloads: 3y=%s periods, 90d=%s periods", len(periods_3y), len(periods_90d))
     download_map_3y = client.prefetch_downloads(periods_3y)
     download_map_90d = client.prefetch_downloads(periods_90d)
-    log.info("Matomo sync download maps: 3y=%s urls, 90d=%s urls",
-             len(download_map_3y), len(download_map_90d))
+    log.info("Matomo sync download maps: 3y=%s urls, 90d=%s urls", len(download_map_3y), len(download_map_90d))
 
     for package in packages:
         processed += 1
@@ -484,15 +447,9 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
                 page_url = _dataset_url(package)
                 download_urls = _dataset_download_urls(package)
 
-                visits, visit_90_days = client.fetch_page_visits(
-                    page_url, periods_3y, periods_90d
-                )
-                downloads = _sum_downloads_from_map(
-                    download_map_3y, download_urls, package.id
-                )
-                download_90_days = _sum_downloads_from_map(
-                    download_map_90d, download_urls, package.id
-                )
+                visits, visit_90_days = client.fetch_page_visits(page_url, periods_3y, periods_90d)
+                downloads = _sum_downloads_from_map(download_map_3y, download_urls, package.id)
+                download_90_days = _sum_downloads_from_map(download_map_90d, download_urls, package.id)
 
                 payload = {
                     "visits": visits,
@@ -521,9 +478,7 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
             failed += 1
             # Ensure any in-flight statement state is cleared before next pkg.
             model.Session.rollback()
-            log.exception(
-                "Matomo sync failed for package=%s: %s", package.name, exc
-            )
+            log.exception("Matomo sync failed for package=%s: %s", package.name, exc)
 
     if dry_run:
         model.Session.rollback()
