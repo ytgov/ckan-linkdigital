@@ -1,6 +1,4 @@
-# encoding: utf-8
-"""
-Fake-traffic generation for local Matomo testing.
+"""Fake-traffic generation for local Matomo testing.
 
 This module is intentionally separate from matomo_sync.py (which only reads
 stats from Matomo and writes them to CKAN).  Nothing here touches the CKAN DB.
@@ -10,12 +8,11 @@ import calendar
 import datetime
 import http.client
 import json
+import logging
 import random
 from urllib.parse import urlencode, urlparse
 
-import logging
-
-import ckan.plugins.toolkit as toolkit
+from ckan.plugins import toolkit as tk
 
 from .matomo_sync import (
     MatomoClient,
@@ -33,7 +30,7 @@ class MatomoTrackingClient(MatomoClient):
     """Extends MatomoClient with Matomo Bulk Tracking API support."""
 
     def __init__(self):
-        super(MatomoTrackingClient, self).__init__()
+        super().__init__()
         parsed = urlparse(self.base_url)
         self._host = parsed.hostname
         self._port = parsed.port or (443 if parsed.scheme == "https" else 80)
@@ -132,7 +129,7 @@ def generate_test_traffic(
     pageview uses a unique visitor ID so Matomo counts each as a distinct visit.
     """
     if visits_3y < 0 or visits_90d < 0 or downloads_3y < 0 or downloads_90d < 0:
-        raise toolkit.ValidationError("All visit/download counts must be >= 0")
+        raise tk.ValidationError("All visit/download counts must be >= 0")
 
     total_downloads = downloads_3y + downloads_90d
     package = _get_package_by_ref(dataset_ref)
@@ -140,7 +137,7 @@ def generate_test_traffic(
     download_urls = _dataset_download_urls(package)
 
     if total_downloads > 0 and not download_urls:
-        raise toolkit.ValidationError(
+        raise tk.ValidationError(
             "Dataset has no active resource URLs to count as downloads"
         )
 

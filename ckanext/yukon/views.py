@@ -114,10 +114,7 @@ class ComplexView(MethodView):
         )
 
         username = tk.current_user.name
-        if tk.current_user.is_authenticated:
-            user = cast(model.User, tk.current_user)
-        else:
-            user = None
+        user = cast(model.User, tk.current_user) if tk.current_user.is_authenticated else None
 
         return {
             "word": word,

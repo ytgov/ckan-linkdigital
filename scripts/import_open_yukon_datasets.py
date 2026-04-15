@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
-import copy
 import json
 import mimetypes
 import os
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import quote_plus
 
 import click
 import requests
-
 
 SOURCE_CKAN_URL = "https://open.yukon.ca"
 SUPPORTED_TYPES = ["data", "information", "access-requests", "pia-summaries"]
@@ -38,9 +34,7 @@ def _ckan_action_get(session, base_url, action, **params):
     response.raise_for_status()
     payload = response.json()
     if not payload.get("success"):
-        raise click.ClickException(
-            f"CKAN action {action} failed: {json.dumps(payload, indent=2)}"
-        )
+        raise click.ClickException(f"CKAN action {action} failed: {json.dumps(payload, indent=2)}")
     return payload["result"]
 
 
@@ -55,15 +49,11 @@ def _ckan_action_post(session, base_url, action, data=None, files=None):
         response.raise_for_status()
     except requests.HTTPError as exc:
         if response.status_code == 409:
-            raise click.ClickException(
-                f"CKAN action {action} conflict: {response.text}"
-            )
+            raise click.ClickException(f"CKAN action {action} conflict: {response.text}")
         raise exc
     payload = response.json()
     if not payload.get("success"):
-        raise click.ClickException(
-            f"CKAN action {action} failed: {json.dumps(payload, indent=2)}"
-        )
+        raise click.ClickException(f"CKAN action {action} failed: {json.dumps(payload, indent=2)}")
     return payload["result"]
 
 
@@ -91,9 +81,7 @@ def _fetch_packages_by_type(session, dataset_type, limit):
 
 
 def _fetch_package(session, dataset_id):
-    return _ckan_action_get(
-        session, SOURCE_CKAN_URL, "package_show", id=dataset_id
-    )
+    return _ckan_action_get(session, SOURCE_CKAN_URL, "package_show", id=dataset_id)
 
 
 def _safe_name(value, fallback):
@@ -124,9 +112,7 @@ def _organization_payload(source_package, source_org):
 
 def _target_package_by_name(target_session, target_url, package_name):
     try:
-        return _ckan_action_get(
-            target_session, target_url, "package_show", id=package_name
-        )
+        return _ckan_action_get(target_session, target_url, "package_show", id=package_name)
     except Exception:
         return None
 
@@ -134,22 +120,14 @@ def _target_package_by_name(target_session, target_url, package_name):
 def _ensure_org(target_session, target_url, source_package, source_session):
     owner_org = source_package.get("owner_org")
     if not owner_org:
-        raise click.ClickException(
-            f"Package {source_package['name']} has no owner_org"
-        )
-    source_org = _ckan_action_get(
-        source_session, SOURCE_CKAN_URL, "organization_show", id=owner_org
-    )
+        raise click.ClickException(f"Package {source_package['name']} has no owner_org")
+    source_org = _ckan_action_get(source_session, SOURCE_CKAN_URL, "organization_show", id=owner_org)
     payload = _organization_payload(source_package, source_org)
     try:
-        existing = _ckan_action_get(
-            target_session, target_url, "organization_show", id=payload["name"]
-        )
+        existing = _ckan_action_get(target_session, target_url, "organization_show", id=payload["name"])
         return existing["id"]
     except Exception:
-        created = _ckan_action_post(
-            target_session, target_url, "organization_create", data=payload
-        )
+        created = _ckan_action_post(target_session, target_url, "organization_create", data=payload)
         return created["id"]
 
 
@@ -171,9 +149,7 @@ def _package_payload(source_package, owner_org_id):
 
     if dataset_type in ("data", "information"):
         payload["internal_contact_name"] = (
-            source_package.get("internal_contact_name")
-            or source_package.get("author")
-            or "Imported Test Contact"
+            source_package.get("internal_contact_name") or source_package.get("author") or "Imported Test Contact"
         )
         payload["internal_contact_email"] = (
             source_package.get("internal_contact_email")
@@ -210,7 +186,9 @@ def _package_payload(source_package, owner_org_id):
                 payload[key] = source_package.get(key)
 
     if dataset_type == "access-requests":
-        payload["date_of_request"] = source_package.get("date_of_request") or source_package.get("date_published") or "2024-01-01"
+        payload["date_of_request"] = (
+            source_package.get("date_of_request") or source_package.get("date_published") or "2024-01-01"
+        )
         payload["file_id"] = source_package.get("file_id") or f"import-{source_package['id'][:8]}"
         payload["response_type"] = source_package.get("response_type") or "not_specified"
         if source_package.get("fees") is not None:
@@ -218,13 +196,10 @@ def _package_payload(source_package, owner_org_id):
 
     if dataset_type == "pia-summaries":
         payload["privacy_impact_assessment_number"] = (
-            source_package.get("privacy_impact_assessment_number")
-            or f"import-{source_package['id'][:8]}"
+            source_package.get("privacy_impact_assessment_number") or f"import-{source_package['id'][:8]}"
         )
         payload["date_of_approval"] = (
-            source_package.get("date_of_approval")
-            or source_package.get("date_published")
-            or "2024-01-01"
+            source_package.get("date_of_approval") or source_package.get("date_published") or "2024-01-01"
         )
 
     return payload
@@ -257,7 +232,7 @@ def _resource_download_url(resource):
     resource_url = resource.get("url")
     if not resource_url:
         return None
-    if resource_url.startswith("http://") or resource_url.startswith("https://"):
+    if resource_url.startswith(("http://", "https://")):
         return resource_url
     return f"{SOURCE_CKAN_URL}{resource_url}"
 
@@ -310,12 +285,7 @@ def _resource_exists(target_package, resource):
         existing_format = (existing.get("format") or "").strip().lower()
         existing_filename = os.path.basename(existing.get("url") or "").strip().lower()
 
-        if (
-            source_filename
-            and source_filename == existing_filename
-            and source_name
-            and source_name == existing_name
-        ):
+        if source_filename and source_filename == existing_filename and source_name and source_name == existing_name:
             return True
         if (
             source_name
@@ -403,26 +373,19 @@ def main(
                 source_package = _fetch_package(source_session, package_stub["id"])
                 resources = _uploaded_resources(source_package)
 
-                owner_org_id = _ensure_org(
-                    target_session, target_url, source_package, source_session
-                )
+                owner_org_id = _ensure_org(target_session, target_url, source_package, source_session)
                 package_payload = _package_payload(source_package, owner_org_id)
 
                 if dry_run:
                     click.echo(
-                        f"dry-run dataset={package_payload['name']} "
-                        f"type={dataset_type} resources={len(resources)}"
+                        f"dry-run dataset={package_payload['name']} type={dataset_type} resources={len(resources)}"
                     )
                     continue
 
-                existing_package = _target_package_by_name(
-                    target_session, target_url, package_payload["name"]
-                )
+                existing_package = _target_package_by_name(target_session, target_url, package_payload["name"])
                 if existing_package:
                     created = existing_package
-                    click.echo(
-                        f"reuse dataset={created['name']} type={dataset_type}"
-                    )
+                    click.echo(f"reuse dataset={created['name']} type={dataset_type}")
                 else:
                     created = _ckan_action_post(
                         target_session,
@@ -468,33 +431,22 @@ def main(
                                 f"resource={resource.get('name') or resource.get('id')} "
                                 f"reason=conflict"
                             )
-                            created = _ckan_action_get(
-                                target_session, target_url, "package_show", id=created["id"]
-                            )
+                            created = _ckan_action_get(target_session, target_url, "package_show", id=created["id"])
                             continue
                         raise
                     uploaded_count += 1
                     totals["resources_uploaded"] += 1
-                    created = _ckan_action_get(
-                        target_session, target_url, "package_show", id=created["id"]
-                    )
+                    created = _ckan_action_get(target_session, target_url, "package_show", id=created["id"])
 
-                click.echo(
-                    f"created dataset={created['name']} type={dataset_type} "
-                    f"resources_uploaded={uploaded_count}"
-                )
+                click.echo(f"created dataset={created['name']} type={dataset_type} resources_uploaded={uploaded_count}")
                 if not resources:
-                    click.echo(
-                        f"note dataset={created['name']} reason=no_uploaded_resources"
-                    )
+                    click.echo(f"note dataset={created['name']} reason=no_uploaded_resources")
                 if sleep_seconds:
                     time.sleep(sleep_seconds)
 
     click.echo(
         "import-complete datasets_created={datasets_created} "
-        "resources_uploaded={resources_uploaded} datasets_skipped={datasets_skipped}".format(
-            **totals
-        )
+        "resources_uploaded={resources_uploaded} datasets_skipped={datasets_skipped}".format(**totals)
     )
 
 

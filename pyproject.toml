@@ -49,6 +49,7 @@ find = {}
 
 [tool.ruff]
 target-version = "py312"
+line-length = 120
 
 [tool.ruff.lint]
 select = [
@@ -88,12 +89,20 @@ ignore = [
        "E712", # comparison to bool: violated by SQLAlchemy filters
        "PLC1901", # simplify comparison to empty string: violated by SQLAlchemy filters
        "RET503", # don't enforce return-None
+    "BLE001", # original extension abuse this
+    "PLR091", # original extension abuse this
+    "BLE001", # original extension abuse this
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["ANN", "D", "PTH", "S", "C", "PL", "B", "BLE", "PERF"]
+"ckanext/yukon/matomo_*.py" = ["ANN", "D", "S", "PL", "C"]
 "ckanext/yukon/tests*" = ["S", "PL", "ANN", "D"]
 "ckanext/yukon/logic/*" = [
-            "D417", # actions don't describe context and data_dict
+    "D", # actions don't describe context and data_dict
+    "G",
+    "C",
+    "B",
 ]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
@@ -137,7 +146,8 @@ parse-trailers = true
 [tool.pyright]
 pythonVersion = "3.12"
 extraPaths = [
-    "../ckan/"
+    "../ckan/",
+    "../ckanext-scheming/",
 ]
 include = ["ckanext"]
 exclude = [

@@ -1,16 +1,15 @@
-# encoding: utf-8
-
 import calendar
+import contextlib
 import datetime
+import http.client
 import json
 import logging
-from sqlalchemy import or_
-import http.client
 from urllib.parse import urlencode, urlparse
 
-import ckan.model as model
-import ckan.plugins.toolkit as toolkit
+from sqlalchemy import or_
 
+from ckan import model
+from ckan.plugins import toolkit as tk
 
 log = logging.getLogger(__name__)
 
@@ -18,35 +17,19 @@ SUPPORTED_TYPES = ["data", "information", "access-requests", "pia-summaries"]
 USAGE_EXTRA_KEYS = ["visits", "downloads", "visit_90_days", "download_90_days"]
 
 
-class MatomoClient(object):
+class MatomoClient:
     def __init__(self):
-        self.base_url = toolkit.config.get(
-            "ckanext.yukon.matomo.api_url", ""
-        ).strip()
-        self.site_id = toolkit.config.get(
-            "ckanext.yukon.matomo.site_id", ""
-        ).strip()
-        self.token_auth = toolkit.config.get(
-            "ckanext.yukon.matomo.token_auth", ""
-        ).strip()
-        self.timeout = int(
-            toolkit.config.get(
-                "ckanext.yukon.matomo.timeout_seconds", 20
-            )
-        )
+        self.base_url = tk.config.get("ckanext.yukon.matomo.api_url", "").strip()
+        self.site_id = tk.config.get("ckanext.yukon.matomo.site_id", "").strip()
+        self.token_auth = tk.config.get("ckanext.yukon.matomo.token_auth", "").strip()
+        self.timeout = int(tk.config.get("ckanext.yukon.matomo.timeout_seconds", 20))
 
         if not self.base_url:
-            raise toolkit.ValidationError(
-                "Missing config: ckanext.yukon.matomo.api_url"
-            )
+            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.api_url")
         if not self.site_id:
-            raise toolkit.ValidationError(
-                "Missing config: ckanext.yukon.matomo.site_id"
-            )
+            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.site_id")
         if not self.token_auth:
-            raise toolkit.ValidationError(
-                "Missing config: ckanext.yukon.matomo.token_auth"
-            )
+            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.token_auth")
 
         self.base_url = self.base_url.rstrip("/")
 
@@ -75,7 +58,9 @@ class MatomoClient(object):
         conn = self._http_conn()
         try:
             conn.request(
-                "POST", path, body=body,
+                "POST",
+                path,
+                body=body,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             resp = conn.getresponse()
@@ -84,9 +69,7 @@ class MatomoClient(object):
             conn.close()
         data = json.loads(raw)
         if isinstance(data, dict) and data.get("result") == "error":
-            raise toolkit.ValidationError(
-                "Matomo API error: {}".format(data.get("message"))
-            )
+            raise tk.ValidationError("Matomo API error: {}".format(data.get("message")))
         return data
 
     def _bulk_call(self, requests_payload):
@@ -98,7 +81,7 @@ class MatomoClient(object):
         body = {"token_auth": self.token_auth}
         for idx, request_payload in enumerate(requests_payload):
             query = urlencode(request_payload, doseq=True)
-            body["urls[{}]".format(idx)] = "?{}".format(query)
+            body[f"urls[{idx}]"] = f"?{query}"
         parsed = urlparse(self.base_url)
         path = parsed.path.rstrip("/") + "/index.php?" + urlencode(params)
         encoded_body = urlencode(body, doseq=True).encode("utf-8")
@@ -106,7 +89,9 @@ class MatomoClient(object):
         conn = self._http_conn()
         try:
             conn.request(
-                "POST", path, body=encoded_body,
+                "POST",
+                path,
+                body=encoded_body,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             resp = conn.getresponse()
@@ -115,9 +100,7 @@ class MatomoClient(object):
             conn.close()
         data = json.loads(raw)
         if isinstance(data, dict) and data.get("result") == "error":
-            raise toolkit.ValidationError(
-                "Matomo API error: {}".format(data.get("message"))
-            )
+            raise tk.ValidationError("Matomo API error: {}".format(data.get("message")))
         return data
 
     def _visits_payload(self, page_url, periods):
@@ -179,16 +162,15 @@ class MatomoClient(object):
                 parsed = urlparse(raw_url if "://" in raw_url else "http://" + raw_url)
                 key = (parsed.netloc.lower() + parsed.path).rstrip("/")
                 hits = 0
-                try:
+                with contextlib.suppress(TypeError, ValueError):
                     hits = int(float(row.get("nb_hits", 0)))
-                except (TypeError, ValueError):
-                    pass
                 url_hits[key] = url_hits.get(key, 0) + hits
         return url_hits
 
     def prefetch_downloads(self, periods):
         """Fetch site-wide download counts for all periods in one bulk request.
-        Returns a dict mapping normalised URL path to total hit count."""
+        Returns a dict mapping normalised URL path to total hit count.
+        """
         payload = self._downloads_site_payload(periods)
         if not payload:
             return {}
@@ -226,7 +208,7 @@ def _sum_downloads_from_map(download_map, candidate_urls, package_id):
     Uploaded files: match any map key that contains the package resource path prefix.
     External URLs: match by normalised URL.
     """
-    package_prefix = "/data/{}/resource/".format(package_id)
+    package_prefix = f"/data/{package_id}/resource/"
     total = 0
     for url in candidate_urls:
         if not url:
@@ -238,10 +220,9 @@ def _sum_downloads_from_map(download_map, candidate_urls, package_id):
                     total += hits
             # Only count prefix once even if multiple resources share the package path
             break
-        else:
-            parsed = urlparse(url if "://" in url else "http://" + url)
-            key = (parsed.netloc.lower() + parsed.path).rstrip("/")
-            total += download_map.get(key, 0)
+        parsed = urlparse(url if "://" in url else "http://" + url)
+        key = (parsed.netloc.lower() + parsed.path).rstrip("/")
+        total += download_map.get(key, 0)
     return total
 
 
@@ -251,7 +232,7 @@ def _normalize_url(value):
     parsed = urlparse(value)
     path = parsed.path.rstrip("/") if parsed.path else ""
     if parsed.netloc:
-        return "{}{}".format(parsed.netloc.lower(), path)
+        return f"{parsed.netloc.lower()}{path}"
     return value.rstrip("/").lower()
 
 
@@ -274,11 +255,7 @@ def _period_chunks(start_date, end_date):
     current = start_date
 
     while current <= end_date:
-        if (
-            current.day == 1
-            and current.month == 1
-            and datetime.date(current.year, 12, 31) <= end_date
-        ):
+        if current.day == 1 and current.month == 1 and datetime.date(current.year, 12, 31) <= end_date:
             chunks.append(("year", str(current.year)))
             current = datetime.date(current.year + 1, 1, 1)
             continue
@@ -286,7 +263,7 @@ def _period_chunks(start_date, end_date):
         last_day_of_month = calendar.monthrange(current.year, current.month)[1]
         month_end = datetime.date(current.year, current.month, last_day_of_month)
         if current.day == 1 and month_end <= end_date:
-            chunks.append(("month", "{:04d}-{:02d}".format(current.year, current.month)))
+            chunks.append(("month", f"{current.year:04d}-{current.month:02d}"))
             if current.month == 12:
                 current = datetime.date(current.year + 1, 1, 1)
             else:
@@ -297,7 +274,7 @@ def _period_chunks(start_date, end_date):
         chunks.append(
             (
                 "range",
-                "{},{}".format(current.isoformat(), range_end.isoformat()),
+                f"{current.isoformat()},{range_end.isoformat()}",
             )
         )
         current = range_end + datetime.timedelta(days=1)
@@ -324,11 +301,7 @@ def _sum_metric_for_urls(records, candidate_urls, metric_keys):
         if not row_urls:
             continue
 
-        if any(
-            row_url in candidates
-            or any(c in row_url or row_url in c for c in candidates)
-            for row_url in row_urls
-        ):
+        if any(row_url in candidates or any(c in row_url or row_url in c for c in candidates) for row_url in row_urls):
             for metric_key in metric_keys:
                 value = row.get(metric_key)
                 if value is None:
@@ -342,14 +315,14 @@ def _sum_metric_for_urls(records, candidate_urls, metric_keys):
 
 
 def _dataset_url(package):
-    site_url = toolkit.config.get("ckan.site_url", "").rstrip("/")
+    site_url = tk.config.get("ckan.site_url", "").rstrip("/")
     if site_url:
-        return "{}/dataset/{}".format(site_url, package.name)
-    return "/dataset/{}".format(package.name)
+        return f"{site_url}/dataset/{package.name}"
+    return f"/dataset/{package.name}"
 
 
 def _dataset_download_urls(package):
-    site_url = toolkit.config.get("ckan.site_url", "").rstrip("/")
+    site_url = tk.config.get("ckan.site_url", "").rstrip("/")
     urls = []
     for resource in package.resources:
         if resource.state != "active":
@@ -386,23 +359,15 @@ def _get_package_by_ref(dataset_ref):
     if package and package.state == "active":
         return package
 
-    package = (
-        model.Session.query(model.Package)
-        .filter_by(name=dataset_ref, state="active")
-        .first()
-    )
+    package = model.Session.query(model.Package).filter_by(name=dataset_ref, state="active").first()
     if package:
         return package
 
-    raise toolkit.ObjectNotFound("Dataset not found: {}".format(dataset_ref))
+    raise tk.ObjectNotFound(f"Dataset not found: {dataset_ref}")
 
 
 def _upsert_extra(package_id, key, value):
-    existing = (
-        model.Session.query(model.PackageExtra)
-        .filter_by(package_id=package_id, key=key)
-        .first()
-    )
+    existing = model.Session.query(model.PackageExtra).filter_by(package_id=package_id, key=key).first()
     value = str(value)
     if existing:
         if existing.value != value:
@@ -410,9 +375,7 @@ def _upsert_extra(package_id, key, value):
             return True
         return False
 
-    model.Session.add(
-        model.PackageExtra(package_id=package_id, key=key, value=value)
-    )
+    model.Session.add(model.PackageExtra(package_id=package_id, key=key, value=value))
     return True
 
 
@@ -428,8 +391,7 @@ def _active_packages_query(dataset_refs=None):
                 model.Package.id.in_(dataset_refs),
             )
         )
-    query = query.order_by(model.Package.metadata_created.desc())
-    return query
+    return query.order_by(model.Package.metadata_created.desc())
 
 
 def _active_packages(dataset_refs=None, limit=None, offset=None):
@@ -443,9 +405,9 @@ def _active_packages(dataset_refs=None, limit=None, offset=None):
 
 def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
     if limit is not None and limit < 1:
-        raise toolkit.ValidationError("--limit must be greater than 0")
+        raise tk.ValidationError("--limit must be greater than 0")
     if offset is not None and offset < 0:
-        raise toolkit.ValidationError("--offset must be greater than or equal to 0")
+        raise tk.ValidationError("--offset must be greater than or equal to 0")
 
     client = MatomoClient()
 
@@ -473,12 +435,10 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
     # scanning raw logs per dataset (slow segment queries).
     periods_3y = _period_chunks(three_year_start, end_date)
     periods_90d = _period_chunks(last_90_start, end_date)
-    log.info("Matomo sync prefetching downloads: 3y=%s periods, 90d=%s periods",
-             len(periods_3y), len(periods_90d))
+    log.info("Matomo sync prefetching downloads: 3y=%s periods, 90d=%s periods", len(periods_3y), len(periods_90d))
     download_map_3y = client.prefetch_downloads(periods_3y)
     download_map_90d = client.prefetch_downloads(periods_90d)
-    log.info("Matomo sync download maps: 3y=%s urls, 90d=%s urls",
-             len(download_map_3y), len(download_map_90d))
+    log.info("Matomo sync download maps: 3y=%s urls, 90d=%s urls", len(download_map_3y), len(download_map_90d))
 
     for package in packages:
         processed += 1
@@ -487,15 +447,9 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
                 page_url = _dataset_url(package)
                 download_urls = _dataset_download_urls(package)
 
-                visits, visit_90_days = client.fetch_page_visits(
-                    page_url, periods_3y, periods_90d
-                )
-                downloads = _sum_downloads_from_map(
-                    download_map_3y, download_urls, package.id
-                )
-                download_90_days = _sum_downloads_from_map(
-                    download_map_90d, download_urls, package.id
-                )
+                visits, visit_90_days = client.fetch_page_visits(page_url, periods_3y, periods_90d)
+                downloads = _sum_downloads_from_map(download_map_3y, download_urls, package.id)
+                download_90_days = _sum_downloads_from_map(download_map_90d, download_urls, package.id)
 
                 payload = {
                     "visits": visits,
@@ -524,9 +478,7 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
             failed += 1
             # Ensure any in-flight statement state is cleared before next pkg.
             model.Session.rollback()
-            log.exception(
-                "Matomo sync failed for package=%s: %s", package.name, exc
-            )
+            log.exception("Matomo sync failed for package=%s: %s", package.name, exc)
 
     if dry_run:
         model.Session.rollback()
