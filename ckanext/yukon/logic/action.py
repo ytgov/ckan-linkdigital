@@ -213,7 +213,7 @@ def yukon_matomo_sync_usage_data(context: types.Context, data_dict: dict[str, An
     return summary
 
 
-def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, Any]:  # noqa: PLR0915, C901, PLR0912б, PLR0915
+def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, Any]:
     """Sets three datasets as featured and removes previous featured datasets.
 
     Ensures that exactly three dataset IDs are provided.
