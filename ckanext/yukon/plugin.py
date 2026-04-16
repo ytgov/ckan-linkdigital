@@ -37,7 +37,9 @@ Example:
 
 from __future__ import annotations
 
-from typing import Any, override
+from typing import Any
+
+from typing_extensions import override
 
 import ckan.plugins as p
 import ckan.plugins.toolkit as tk
