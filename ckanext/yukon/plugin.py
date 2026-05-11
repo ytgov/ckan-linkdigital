@@ -78,6 +78,7 @@ from .logic import action, auth
         "dataset_type_title": helpers.dataset_type_title,
         "dataset_type_menu_title": helpers.dataset_type_menu_title,
         "matomo_siteid": helpers.add_matomo_siteid_to_context,
+        'matomo_url': helpers.matomo_url,
         "yukon_allow_local_login": helpers.yukon_allow_local_login,
         "get_year_facet_items": helpers.get_year_facet_items,
     }
