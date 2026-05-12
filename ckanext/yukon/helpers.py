@@ -290,20 +290,20 @@ def add_matomo_siteid_to_context():
     This is used for tracking purposes.
     """
     # Get the Matomo site ID from the CKAN configuration.
-    # Uses CKANEXT__YUKONDESIGN__MATOMO__SITE_ID env var.
-    return tk.config.get("ckanext.yukondesign.matomo.site_id", "1")
+    # Uses CKANEXT__YUKON__MATOMO__SITE_ID env var.
+    return tk.config.get("ckanext.yukon.matomo.site_id", "1")
     # Return the Matomo site ID for direct use in templates
 
 
 def matomo_url():
     """Returns the Matomo tracking URL from the configuration.
 
-    Uses CKANEXT__YUKONDESIGN__MATOMO__TRACKER_URL for browser tracking,
+    Uses CKANEXT__YUKON__MATOMO__TRACKER_URL for browser tracking,
     separate from the API_URL which is used for stats queries.
     """
-    # Get the Matomo tracker URL from configuration (CKANEXT__YUKONDESIGN__MATOMO__TRACKER_URL)
+    # Get the Matomo tracker URL from configuration (CKANEXT__YUKON__MATOMO__TRACKER_URL)
     # Falls back to analytics.gov.yk.ca if not set
-    tracker_url: str = tk.config.get("ckanext.yukondesign.matomo.tracker_url", "https://analytics.gov.yk.ca/")
+    tracker_url: str = tk.config.get("ckanext.yukon.matomo.tracker_url", "https://analytics.gov.yk.ca/")
 
     # Ensure the URL ends with a trailing slash for the tracking code
     if not tracker_url.endswith("/"):
