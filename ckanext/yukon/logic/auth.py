@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ckan import types
 from ckan.plugins import toolkit as tk
 
@@ -11,3 +13,10 @@ def package_delete_sysadmin_only(context: types.Context, data_dict: types.DataDi
         raise tk.NotAuthorized("Only sysadmins can delete datasets.")
     # Allow deletion
     return context
+
+
+def yukon_matomo_sync_usage_data_sysadmin_only(context: types.Context, data_dict: dict[str, Any]):
+    """Allow only sysadmins to trigger Matomo sync through the API."""
+    if not tk.check_access("sysadmin", context):
+        raise tk.NotAuthorized("Only sysadmins can trigger Matomo usage sync.")
+    return {"success": True}

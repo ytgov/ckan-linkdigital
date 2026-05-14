@@ -8,27 +8,131 @@ from __future__ import annotations
 import datetime
 import fnmatch
 import logging
+from typing import Any
 
 from ckan import model, types
 from ckan.plugins import toolkit as tk
 
-from ckanext.scheming.helpers import scheming_get_dataset_schema
+from ckanext.scheming.helpers import scheming_get_dataset_schema  # pyright: ignore[reportUnknownVariableType]
 
 from . import config
 
 log = logging.getLogger(__name__)
 
 
-def get_all_groups() -> list[str]:
+def get_all_groups() -> list[str]:  # noqa: C901
     """Returns a list of all groups in CKAN."""
     try:
-        groups = tk.get_action("group_list")(
-            {"ignore_auth": True}, {"all_fields": True}
-        )  # Bypass auth
-    except tk.ObjectNotFound:
+        # Log the raw template/request context for debugging
+        c_userobj = getattr(tk.c, "userobj", None)
+        c_user = getattr(tk.c, "user", None)
+        log.debug("get_all_groups called: c.userobj=%r c.user=%r", c_userobj, c_user)
+
+        # Return only groups that the current user is a member of.
+        user = c_user or None
+        if not c_userobj and not user:
+            log.debug("No user in context; returning empty group list")
+            return []
+
+        # Determine the current user object. Templates often set `c.userobj`,
+        # otherwise `c.user` may be a username.
+        user_obj = c_userobj
+        if not user_obj:
+            user_identifier = c_user
+            try:
+                user_obj = model.User.get(user_identifier)
+            except Exception:
+                user_obj = None
+            if not user_obj:
+                log.debug("Could not resolve user object for identifier=%r", user_identifier)
+                return []
+
+        # Get all groups and check which ones the user is a member of
+        try:
+            all_groups = tk.get_action("group_list")({"ignore_auth": True}, {"all_fields": True, "sort": "name"})
+            log.debug("Found %d total groups", len(all_groups))
+
+            user_groups = []
+            for group in all_groups:
+                try:
+                    # Check if user is a member of this group
+                    members = tk.get_action("member_list")(
+                        {"ignore_auth": True}, {"id": group["id"], "object_type": "user"}
+                    )
+                    # Check if our user is in the members list
+                    for member in members:
+                        member_id = member[0] if isinstance(member, list | tuple) else member.get("id")
+                        if str(member_id) == str(user_obj.id) or str(member_id) == str(user_obj.name):
+                            user_groups.append(group)
+                            log.debug("User %s is member of group %s", user_obj.name, group["name"])
+                            break
+                except Exception:
+                    log.exception("Failed to check membership for group %s", group.get("id"))
+                    continue
+
+            if user_groups:
+                log.debug("Returning %d groups for user %s", len(user_groups), user_obj.name)
+                return user_groups
+            log.debug("No groups found for user %s via action API", user_obj.name)
+        except Exception:
+            log.exception("Action API approach failed; falling back to DB scan")
+
+        # Fallback: query Member rows and match in Python to support older/newer CKAN
+        try:
+            members = model.Session.query(model.Member).filter(model.Member.table_name == "group").all()
+
+            log.debug("Found %d group membership rows total", len(members))
+
+            group_ids = []
+            for m in members:
+                match = False
+                candidates = [
+                    getattr(m, "user_id", None),
+                    getattr(m, "entity_id", None),
+                    getattr(m, "ref", None),
+                    getattr(m, "entity", None),
+                    getattr(m, "user", None),
+                ]
+                for cand in candidates:
+                    if cand is None:
+                        continue
+                    try:
+                        if hasattr(cand, "id"):
+                            cand_val = cand.id
+                        elif hasattr(cand, "name"):
+                            cand_val = cand.name
+                        else:
+                            cand_val = cand
+                    except Exception:
+                        cand_val = cand
+
+                    try:
+                        if str(cand_val) == str(user_obj.id) or str(cand_val) == str(user_obj.name):
+                            match = True
+                            break
+                    except Exception:  # noqa: S112
+                        continue
+                if match:
+                    gid = getattr(m, "table_id", None)
+                    if gid:
+                        group_ids.append(gid)
+
+            groups = []
+            for gid in group_ids:
+                try:
+                    group = tk.get_action("group_show")({"ignore_auth": True}, {"id": gid})
+                except Exception:  # noqa: S112
+                    continue
+                groups.append(group)
+
+            log.debug("Returning %d groups from DB scan for user id=%s", len(groups), user_obj.id)
+            return groups
+        except Exception as e:
+            log.exception("Fallback DB scan failed: %r", e)
+            return []
+    except Exception as e:
+        log.exception("Unexpected error in get_all_groups: %r", e)
         return []
-    else:
-        return groups
 
 
 def recently_updated_open_informations() -> list[dict[str, str]]:
@@ -107,9 +211,7 @@ def get_featured_datasets():
         for extra in extras_query:
             try:
                 # Get the full package data
-                package_dict = tk.get_action("package_show")(
-                    {"ignore_auth": True}, {"id": extra.package_id}
-                )
+                package_dict = tk.get_action("package_show")({"ignore_auth": True}, {"id": extra.package_id})
                 # Only include if it`s a data type package
                 if package_dict.get("type") == "data":
                     featured_packages.append(package_dict)
@@ -187,9 +289,48 @@ def add_matomo_siteid_to_context():
 
     This is used for tracking purposes.
     """
-    # Get the Matomo site ID from the CKAN configuration
+    # Get the Matomo site ID from the CKAN configuration.
+    # Uses CKANEXT__YUKON__MATOMO__SITE_ID env var.
+    return tk.config.get("ckanext.yukon.matomo.site_id", "1")
     # Return the Matomo site ID for direct use in templates
-    return tk.config.get("ckan.matomo_siteid", "1")
+
+
+def matomo_url():
+    """Returns the Matomo tracking URL from the configuration.
+
+    Uses CKANEXT__YUKON__MATOMO__TRACKER_URL for browser tracking,
+    separate from the API_URL which is used for stats queries.
+    """
+    # Get the Matomo tracker URL from configuration (CKANEXT__YUKON__MATOMO__TRACKER_URL)
+    # Falls back to analytics.gov.yk.ca if not set
+    tracker_url: str = tk.config.get("ckanext.yukon.matomo.tracker_url", "https://analytics.gov.yk.ca/")
+
+    # Ensure the URL ends with a trailing slash for the tracking code
+    if not tracker_url.endswith("/"):
+        tracker_url += "/"
+
+    return tracker_url
+
+
+def get_year_facet_items(facet_name: str, search_facets: dict[str, Any]):
+    """Get facet items for the year_published facet, sorted chronologically (newest first).
+
+    This overrides the default facet sorting which is by count, and instead sorts
+    by year in descending order (most recent years first).
+
+    :param facet_name: The name of the facet field (should be 'year_published')
+    :param search_facets: Dictionary containing all search facets
+    :return: List of facet items sorted by year (newest first)
+    """
+    if not search_facets or facet_name not in search_facets:
+        return []
+
+    facet_data = search_facets.get(facet_name, {})
+    items = facet_data.get("items", [])
+
+    # Sort items by year in descending order (newest first)
+    # Each item has 'name' (the year) and 'count' (number of datasets)
+    return sorted(items, key=lambda x: x.get("name", ""), reverse=True)
 
 
 def yukon_allow_local_login() -> bool:
