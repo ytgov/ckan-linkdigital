@@ -33,7 +33,7 @@
 # CKAN core supports this short syntax. But internally it's unfolds into
 ## remote-ckan = https://github.com/ckan/ckan tag ckan-2.10.4
 # if you want to use CKAN fork or specific commit, use this full specification
-ckan_tag = ckan-2.11.4
+ckan_tag = ckan-2.11.5
 
 # items from this list are installed by `make full-upgrade` and `make sync
 # install`. If you specify remote, but did not added extension to this list, it
@@ -63,7 +63,7 @@ ext_list = \
 # * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
 remote-scheming = https://github.com/ckan/ckanext-scheming.git tag release-3.1.0
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
-remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.9
+remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.10
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 remote-harvest = https://github.com/ckan/ckanext-harvest.git tag v1.6.1
 remote-downloadall = https://github.com/datopian/ckanext-downloadall.git branch yukon-2.11.0
