@@ -17,6 +17,7 @@ from ckan.cli import load_config
 from ckan.config.middleware import make_app
 
 from ckanext.yukon import matomo_sync, matomo_traffic
+from ckanext.yukon.cli.metadata_modified import restore_metadata_modified
 from ckanext.yukon.cli.migration import data_migration
 
 __all__ = ["yukon", "yukon_matomo"]
@@ -34,6 +35,7 @@ def yukon(ctx: click.Context):
 
 
 yukon.add_command(data_migration)
+yukon.add_command(restore_metadata_modified)
 
 
 # Command decorated with `yukon.command()` decorator is
