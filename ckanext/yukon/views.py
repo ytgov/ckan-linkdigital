@@ -147,6 +147,28 @@ class ComplexView(MethodView):
         return tk.redirect_to("yukon.page")
 
 
+class SelectDatasetTypeView(MethodView):
+    def post(self):
+        type_ = tk.request.form["type"]
+        return tk.redirect_to(f"{type_}.new")
+
+    def get(self):
+        extra_vars = {
+            "form_snippet": "package/snippets/yukon_select_dataset_type_form.html",
+            "pkg_dict": {},
+            "form_vars": {
+                "package_types": [
+                    {"value": "data", "text": tk._("Open data")},
+                    {"value": "information", "text": tk._("Open information")},
+                    {"value": "access-requests", "text": tk._("Completed access to information request")},
+                    {"value": "pia-summaries", "text": tk._("Privacy impact assessment summary")},
+                ],
+            },
+        }
+
+        return tk.render("package/yukon_select_dataset_type.html", extra_vars)
+
+
 @bp.route("/service/user/login", methods=["GET", "POST"])
 def internal_login():
     return login()
@@ -157,4 +179,9 @@ def internal_login():
 bp.add_url_rule(
     "/yukon/complex/<word>",
     view_func=ComplexView.as_view("complex"),
+)
+
+bp.add_url_rule(
+    "/dataset/new",
+    view_func=SelectDatasetTypeView.as_view("select_dataset_type"),
 )
