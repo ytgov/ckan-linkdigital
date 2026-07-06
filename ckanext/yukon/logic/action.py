@@ -41,6 +41,8 @@ def package_search(up_func: types.Action, context: types.Context, data_dict: typ
     pkg_dicts = result["results"]
 
     for pkg_dict in pkg_dicts:
+        if "organization" not in pkg_dict:
+            continue
         org_id = pkg_dict["organization"]["id"]
         if not _can_view_internal_data(user, org_id):
             pkg_dict.pop("internal_contact_name", None)

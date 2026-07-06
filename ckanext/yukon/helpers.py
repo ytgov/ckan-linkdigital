@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import datetime
 import fnmatch
 import logging
 from typing import Any
 
+import ckan.plugins.toolkit as tk
 from ckan import model, types
-from ckan.plugins import toolkit as tk
 
 from ckanext.scheming.helpers import scheming_get_dataset_schema  # pyright: ignore[reportUnknownVariableType]
 
@@ -15,162 +14,39 @@ from . import config
 log = logging.getLogger(__name__)
 
 
-def get_all_groups() -> list[str]:  # noqa: C901
-    """Returns a list of all groups in CKAN."""
-    try:
-        # Log the raw template/request context for debugging
-        c_userobj = getattr(tk.c, "userobj", None)
-        c_user = getattr(tk.c, "user", None)
-        log.debug("get_all_groups called: c.userobj=%r c.user=%r", c_userobj, c_user)
-
-        # Return only groups that the current user is a member of.
-        user = c_user or None
-        if not c_userobj and not user:
-            log.debug("No user in context; returning empty group list")
-            return []
-
-        # Determine the current user object. Templates often set `c.userobj`,
-        # otherwise `c.user` may be a username.
-        user_obj = c_userobj
-        if not user_obj:
-            user_identifier = c_user
-            try:
-                user_obj = model.User.get(user_identifier)
-            except Exception:
-                user_obj = None
-            if not user_obj:
-                log.debug("Could not resolve user object for identifier=%r", user_identifier)
-                return []
-
-        # Get all groups and check which ones the user is a member of
-        try:
-            all_groups = tk.get_action("group_list")({"ignore_auth": True}, {"all_fields": True, "sort": "name"})
-            log.debug("Found %d total groups", len(all_groups))
-
-            user_groups = []
-            for group in all_groups:
-                try:
-                    # Check if user is a member of this group
-                    members = tk.get_action("member_list")(
-                        {"ignore_auth": True}, {"id": group["id"], "object_type": "user"}
-                    )
-                    # Check if our user is in the members list
-                    for member in members:
-                        member_id = member[0] if isinstance(member, list | tuple) else member.get("id")
-                        if str(member_id) == str(user_obj.id) or str(member_id) == str(user_obj.name):
-                            user_groups.append(group)
-                            log.debug("User %s is member of group %s", user_obj.name, group["name"])
-                            break
-                except Exception:
-                    log.exception("Failed to check membership for group %s", group.get("id"))
-                    continue
-
-            if user_groups:
-                log.debug("Returning %d groups for user %s", len(user_groups), user_obj.name)
-                return user_groups
-            log.debug("No groups found for user %s via action API", user_obj.name)
-        except Exception:
-            log.exception("Action API approach failed; falling back to DB scan")
-
-        # Fallback: query Member rows and match in Python to support older/newer CKAN
-        try:
-            members = model.Session.query(model.Member).filter(model.Member.table_name == "group").all()
-
-            log.debug("Found %d group membership rows total", len(members))
-
-            group_ids = []
-            for m in members:
-                match = False
-                candidates = [
-                    getattr(m, "user_id", None),
-                    getattr(m, "entity_id", None),
-                    getattr(m, "ref", None),
-                    getattr(m, "entity", None),
-                    getattr(m, "user", None),
-                ]
-                for cand in candidates:
-                    if cand is None:
-                        continue
-                    try:
-                        if hasattr(cand, "id"):
-                            cand_val = cand.id
-                        elif hasattr(cand, "name"):
-                            cand_val = cand.name
-                        else:
-                            cand_val = cand
-                    except Exception:
-                        cand_val = cand
-
-                    try:
-                        if str(cand_val) == str(user_obj.id) or str(cand_val) == str(user_obj.name):
-                            match = True
-                            break
-                    except Exception:  # noqa: S112
-                        continue
-                if match:
-                    gid = getattr(m, "table_id", None)
-                    if gid:
-                        group_ids.append(gid)
-
-            groups = []
-            for gid in group_ids:
-                try:
-                    group = tk.get_action("group_show")({"ignore_auth": True}, {"id": gid})
-                except Exception:  # noqa: S112
-                    continue
-                groups.append(group)
-
-            log.debug("Returning %d groups from DB scan for user id=%s", len(groups), user_obj.id)
-            return groups
-        except Exception as e:
-            log.exception("Fallback DB scan failed: %r", e)
-            return []
-    except Exception as e:
-        log.exception("Unexpected error in get_all_groups: %r", e)
-        return []
-
-
 def recently_updated_open_informations() -> list[dict[str, str]]:
     """Returns a list of 3 recently updated open informations."""
-    try:
-        result = tk.get_action("package_search")(
-            {"ignore_auth": True},
-            {"fq": "type:information", "sort": "metadata_modified desc", "rows": 3},
-        )  # Bypass auth
-        # Drop all the fields except the ones we need: title, name and type
-        packages = []
-        for item in result["results"]:
-            package = {
-                "title": item["title"],
-                "name": item["name"],
-                "type": item["type"],
-            }
-            packages.append(package)
-    except tk.ObjectNotFound:
-        return []
-    else:
-        return packages
+    result = tk.get_action("package_search")(
+        {},
+        {"fq": "type:information", "sort": "metadata_modified desc", "rows": 3, "fl": "title,name,dataset_type"},
+    )
+    # Drop all the fields except the ones we need: title, name and type
+    return [
+        {
+            "title": item["title"],
+            "name": item["name"],
+            "type": item["dataset_type"],
+        }
+        for item in result["results"]
+    ]
 
 
 def recently_added_access_requests():
     """Returns a list of 3 recently added access requests."""
-    try:
-        result = tk.get_action("package_search")(
-            {"ignore_auth": True},
-            {"fq": "type:access-requests", "sort": "metadata_created desc", "rows": 3},
-        )  # Bypass auth
-        # Drop all the fields except the ones we need: title, name and type
-        packages = []
-        for item in result["results"]:
-            package = {}
-            package["title"] = item["title"]
-            package["name"] = item["name"]
-            package["type"] = item["type"]
-            packages.append(package)
-    except tk.ObjectNotFound:
-        return []
-    else:
-        return packages
+    result = tk.get_action("package_search")(
+        {"ignore_auth": True},
+        {"fq": "type:access-requests", "sort": "metadata_created desc", "rows": 3},
+    )  # Bypass auth
+    # Drop all the fields except the ones we need: title, name and type
+    packages = []
+    for item in result["results"]:
+        package = {}
+        package["title"] = item["title"]
+        package["name"] = item["name"]
+        package["type"] = item["type"]
+        packages.append(package)
+
+    return packages
 
 
 def get_featured_datasets():

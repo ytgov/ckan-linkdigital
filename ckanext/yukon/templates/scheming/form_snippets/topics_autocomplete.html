@@ -1,6 +1,6 @@
 {% import 'macros/form.html' as form %}
 
-{% set groups_available = h.get_all_groups() %}
+{% set groups_available = h.groups_available(am_member=true) %}
 {% set group_error = errors.group_id %}
 {% set selected_groups = data.groups | map(attribute='id') | list  %}
 {% set label=h.scheming_language_text(field.label) %}

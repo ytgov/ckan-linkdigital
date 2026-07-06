@@ -2,7 +2,7 @@
 
 {% block title %}
     {%- block subtitle %}
-        {{ _('Edit') }} {{ h.dataset_type_menu_title(pkg_dict.type) }}
+        {{ _('Edit') }} {{ h.dataset_type_menu_title(dataset_type) }}
     {% endblock -%}
     {%- if self.subtitle()|trim %} {{ g.template_title_delimiter }} {% endif -%}
     {{ g.site_title }}
@@ -12,9 +12,9 @@
 {% set dataset_type_title=h.dataset_type_title(dataset_type) %}
 {% block breadcrumb_content %}
     {% if pkg %}
-    <li class="active">
-        {{ _(h.nav_link(_(dataset_type_title), named_route='%s.search' % dataset_type)) }}
-    </li>
+        <li class="active">
+            {{ _(h.nav_link(_(dataset_type_title), named_route='%s.search' % dataset_type)) }}
+        </li>
 	<li class="active">{% link_for _('Edit'), named_route=pkg.type ~ '.edit', id=pkg.name %}</li>
     {% endif %}
 {% endblock %}

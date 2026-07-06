@@ -100,9 +100,6 @@ ignore = [
 "ckanext/yukon/tests*" = ["S", "PL", "ANN", "D"]
 "ckanext/yukon/logic/*" = [
     "D", # actions don't describe context and data_dict
-    "G",
-    "C",
-    "B",
 ]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
@@ -218,4 +215,5 @@ reportExplicitAny = false
 
 [tool.coverage.run]
 branch = true
-omit = ["ckanext/yukon/tests/*"]
+omit = ["ckanext/yukon/tests/*", "ckanext/yukon/migration/*"]
+source = ["ckanext/yukon"]

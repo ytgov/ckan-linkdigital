@@ -4,9 +4,7 @@ Revision ID: cc1a832108c5
 Revises:
 """
 
-import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision = "cc1a832108c5"
@@ -16,13 +14,7 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
-        "yukon_something",
-        sa.Column("id", sa.UnicodeText, primary_key=True),
-        sa.Column("hello", sa.UnicodeText, nullable=False, server_default=""),
-        sa.Column("world", sa.UnicodeText, nullable=False),
-        sa.Column("plugin_data", JSONB, server_default="{}"),
-    )
+    op.create_table("yukon_something")
 
 
 def downgrade():
