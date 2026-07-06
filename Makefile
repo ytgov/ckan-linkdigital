@@ -13,7 +13,7 @@ ext_list = \
 	xloader \
 	ingest \
 	downloadall \
-	harvest
+	harvest theming
 
 remote-scheming = https://github.com/ckan/ckanext-scheming.git tag release-3.1.0
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
@@ -21,6 +21,7 @@ remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.10
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 remote-harvest = https://github.com/ckan/ckanext-harvest.git tag v1.6.1
 remote-downloadall = https://github.com/SDM-TIB/ckanext-downloadall.git commit 4e0965e # 2026-04-09, +1 commit after v0.3.0
+remote-theming = https://github.com/dataShades/ckanext-theming commit 3651549 # 2026-06-06
 
 package_extras-remote-googleanalytics = requirements
 package_extras-remote-files = opendal,libcloud
@@ -41,11 +42,16 @@ prepare:  ## download CDM rules
 	curl -O https://raw.githubusercontent.com/DataShades/ckan-deps-installer/$(_version)/deps.mk
 
 
+test-config = test_config/test.ini
+
 test-server:  ## start server for frontend testing
 ifeq ($(dirty-server),)
-	yes | ckan -c test.ini db clean
-	ckan -c test.ini db upgrade
-	yes | ckan -ctest.ini sysadmin add admin password=password123 email=admin@test.net
-else
-	ckan -c test.ini run -t
+	yes | ckan -c $(test-config) db clean
+	ckan -c $(test-config) db upgrade
+	yes | ckan -c$(test-config) sysadmin add admin password=password123 email=admin@test.net
 endif
+	ckan -c $(test-config) run -t
+
+
+serve-docs: ## serve documentation via HTTP
+	zensical serve

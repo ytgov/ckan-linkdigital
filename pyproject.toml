@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ckanext-yukon"
-version = "1.2.1"
+version = "1.2.2"
 description = "Yukon 2025 CKAN design extension"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -34,9 +34,9 @@ text = "AGPL"
 Homepage = "https://github.com//ckanext-yukon"
 
 [project.optional-dependencies]
-[options.extras_require]
+
 test = ["pytest-ckan"]
-dev = ["pytest-ckan", "pre-commit"]
+dev = ["pytest-ckan", "pre-commit", "pytest-playwright", "zensical"]
 
 [project.entry-points."ckan.plugins"]
 yukon = "ckanext.yukon.plugin:YukonPlugin"
@@ -73,7 +73,7 @@ select = [
        "PL",  # pylint
        "PERF", # performance anti-patterns
        "PT",  # pytest style
-       "PTH", # replace os.path with pathlib
+       # "PTH", # replace os.path with pathlib
        "PIE",  # misc lints
        "RET",  # improvements for return statements
        "RSE",  # improvements for rise statements
@@ -139,6 +139,7 @@ pythonVersion = "3.11"
 extraPaths = [
     "../ckan/",
     "../ckanext-scheming/",
+    "../ckanext-theming/",
 ]
 include = ["ckanext"]
 exclude = [
@@ -210,6 +211,8 @@ reportUnsupportedDunderAll = true
 reportUnusedCoroutine = true
 reportUnnecessaryTypeIgnoreComment = true
 reportMatchNotExhaustive = true
+reportAny = false
+reportExplicitAny = false
 
 [tool.coverage.run]
 branch = true
