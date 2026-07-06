@@ -1,0 +1,47 @@
+{%- macro badge(content, style="primary") -%}
+    {%- set class = "badge bg-" ~ style ~ ' text-bg-' ~ style -%}
+    <span {{ ui.util.attrs(kwargs, {"class": class}) }}>
+        {{- content -}}
+    </span>
+{%- endmacro %}
+
+{%- macro button(content, href, icon, size, type="button", style="primary") -%}
+    {%- set prefix = ui.icon(icon) if icon else "" -%}
+    {%- set class = "btn btn-" ~ style ~ ((' btn-' ~ size) if size else "") -%}
+    {%- do kwargs.setdefault("attrs", {}).setdefault("class", class) -%}
+
+    {%- if href -%}
+        {{ ui.link(prefix ~ content, href=href, **kwargs) }}
+    {%- else -%}
+        <button {{ ui.util.attrs(kwargs) }} type="{{ type }}">
+            {{- prefix ~ content -}}
+        </button>
+    {%- endif %}
+{%- endmacro %}
+
+{%- macro icon(name, style=none) -%}
+    {%- set base_class = "fa-{}".format(style) if style else "fa" -%}
+    <i {{ ui.util.attrs(kwargs) }} class="{{ base_class }} fa-{{ ui.util.icon(name) }}"></i>
+{%- endmacro %}
+
+{%- macro tag(content, href) -%}
+    {%- if href -%}
+        <a {{ ui.util.attrs(kwargs, {"class": "tag"}) }} href="{{ href }}">{{ content }}</a>
+    {%- else -%}
+        <span {{ ui.util.attrs(kwargs, {"class": "tag"}) }}>{{ content }}</span>
+    {%- endif %}
+{%- endmacro %}
+
+{%- macro tab(content, active, href, id) -%}
+    <li class="nav-item">
+        {%- if href is defined -%}
+            <a {{ ui.util.attrs(kwargs, {"class": "nav-link" ~ (" active" if active else "")}) }} href="{{ href }}">{{ content }}</a>
+        {%- else -%}
+            <button {{ ui.util.attrs(kwargs, {"class": "nav-link" ~ (" active" if active else ""), }) }} data-bs-toggle="tab" data-bs-target="#{{ id }}" type="button" role="tab" aria-controls="{{ id }}">{{ content }}</button>
+        {%- endif %}
+    </li>
+{%- endmacro %}
+
+{%- macro empty(content) -%}
+    <p {{ ui.util.attrs(kwargs, {"class": "empty"}) }}>{{ content }}</p>
+{%- endmacro %}

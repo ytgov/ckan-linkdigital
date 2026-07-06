@@ -1,0 +1,242 @@
+{%- macro facet_list(content) -%}
+    <ul {{ ui.util.attrs(kwargs, {"class": "list-unstyled nav nav-simple nav-facet"}) }}>{{ content }}</ul>
+{%- endmacro %}
+
+{%- macro filters(content) -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "filters"}) }}>{{ content }}</div>
+{%- endmacro %}
+
+{%- macro group_list(content) -%}
+    <ul {{ ui.util.attrs(kwargs, {"class": "media-grid", "data-module": "media-grid"}) }}>
+        {{ content }}
+    </ul>
+{%- endmacro %}
+
+{%- macro organization_list(content) -%}
+    {{ ui.group_list(content, **kwargs) }}
+{%- endmacro %}
+
+{%- macro package_list(content) -%}
+    <ul {{ ui.util.attrs(kwargs, {"class": "dataset-list list-unstyled"}) }}>
+        {{ content }}
+    </ul>
+{%- endmacro %}
+
+{%- macro resource_list(content) -%}
+    <ul {{ ui.util.attrs(kwargs, {"class": "resource-list"}) }}>
+        {{ content }}
+    </ul>
+{%- endmacro %}
+
+{%- macro user_list(content) -%}
+    <ul {{ ui.util.attrs(kwargs, {"class": "user-list"}) }}>{{ content }}</ul>
+{%- endmacro %}
+
+{%- macro accordion(content, title, open) -%}
+    {%- set header_id = ui.util.id() -%}
+    {%- set id = ui.util.id() -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "accordion-item"}) }}>
+        <h2 class="accordion-header" id="{{ header_id }}">
+            <button class="accordion-button {{ 'collapsed' if not open }}" type="button" data-bs-toggle="collapse" data-bs-target="#{{ id }}" aria-expanded="{{ 'true' if open else 'false' }}" aria-controls="{{ id }}">
+                {{ title }}
+            </button>
+        </h2>
+        <div id="{{ id }}" class="accordion-collapse collapse {{ 'show' if open }}" aria-labelledby="{{ header_id }}" >
+            <div class="accordion-body">
+                {{ content }}
+            </div>
+        </div>
+    </div>
+{%- endmacro %}
+
+{%- macro button_group(content, direction="row") -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "btn-group" ~ ("-vertical" if direction == "column" else "")}) }}>
+        {{- content -}}
+    </div>
+{%- endmacro %}
+
+{%- macro card(content, title, footer, img) -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "card"}) }} >
+        {%- if img -%}
+            {{ ui.image(img, attrs={"class": "carg-img-top"}) }}
+        {%- endif %}
+        <div class="card-body">
+            {%- if title -%}
+                <h5 class="card-title">{{ title }}</h5>
+            {%- endif %}
+            {%- if content -%}
+                <div class="card-text">{{ content }}</div>
+            {%- endif %}
+        </div>
+        {%- if footer -%}
+            <div class="card-footer">{{ footer }}</div>
+        {%- endif %}
+    </div>
+{%- endmacro %}
+
+{%- macro container(content, fluid) -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "container" ~ ('-fluid' if fluid else "")}) }}>{{ content }}</div>
+{%- endmacro %}
+
+{%- macro list(content) -%}
+    <ul {{ ui.util.attrs(kwargs, {"class": "list-unstyled"}) }}>
+        {{ content }}
+    </ul>
+{%- endmacro %}
+
+{%- macro list_item(content) -%}
+    <li {{ ui.util.attrs(kwargs) }}>
+        {{ content }}
+    </li>
+{%- endmacro %}
+
+{%- macro dropdown(content, title, inline, id, style="primary") -%}
+    {%- do kwargs.setdefault("data", {}).setdefault("bs-toggle", "dropdown") -%}
+    {%- do kwargs.setdefault("attrs", {}).setdefault("id", ui.util.id()) -%}
+    {%- do kwargs.setdefault("aria", {}).setdefault("expanded", "false") -%}
+
+    <div class="dropdown {{ 'btn-group' if inline }}">
+        {{ ui.button(title, style=style ~ " dropdown-toggle", **kwargs) }}
+        <ul class="dropdown-menu" aria-labelledby="{{ kwargs.attrs.id }}">
+            {{ content }}
+        </ul>
+    </div>
+{%- endmacro %}
+
+{%- macro tabbed_content(content) -%}
+    {%- do kwargs -%}
+    {{ content }}
+{%- endmacro %}
+
+{%- macro tab_pane(content, active, id) -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "tab-pane fade" ~(" show active" if active else ""), "id": id}) }} role="tabpanel" tabindex="0">
+        {{ content }}
+    </div>
+{%- endmacro %}
+
+{#
+    Bootstrap 5 implementation
+
+    Breakpoint mapping:
+    xs → (no infix, plain col-N)
+    sm → col-sm-N
+    md → col-md-N
+    lg → col-lg-N
+    xl → col-xl-N
+
+    Gap mapping (Bootstrap g-* utilities, 0–5):
+    none → g-0
+    xs   → g-1
+    sm   → g-2
+    md   → g-3
+    lg   → g-4
+    xl   → g-5
+    #}
+{%- macro grid(content, fluid) -%}
+    {%- call ui.util.call(ui.container, fluid=fluid, **kwargs) -%}
+        {{ content }}
+    {%- endcall %}
+{%- endmacro %}
+
+{%- macro row(content, align="start", justify="start", gap=none, wrap=true) -%}
+    {#— align-items mapping —#}
+    {%- set _align_map = {
+        "start":    "align-items-start",
+        "center":   "align-items-center",
+        "end":      "align-items-end",
+        "stretch":  "align-items-stretch",
+        "baseline": "align-items-baseline"
+        } -%}
+
+    {#— justify-content mapping —#}
+    {%- set _justify_map = {
+        "start":   "justify-content-start",
+        "center":  "justify-content-center",
+        "end":     "justify-content-end",
+        "between": "justify-content-between",
+        "around":  "justify-content-around",
+        "evenly":  "justify-content-evenly"
+        } -%}
+
+    {#— gap mapping —#}
+    {%- set _gap_map = {
+        "none": "g-0",
+        "xs":   "g-1",
+        "sm":   "g-2",
+        "md":   "g-3",
+        "lg":   "g-4",
+        "xl":   "g-5"
+        } -%}
+
+    {%- set ns = namespace(class="row") -%}
+    {%- set ns.class = ns.class ~ " " ~ _align_map.get(align, "align-items-start") -%}
+    {%- set ns.class = ns.class ~ " " ~ _justify_map.get(justify, "justify-content-start") -%}
+    {%- if gap is not none -%}
+        {%- set ns.class = ns.class ~ " " ~ _gap_map.get(gap, "g-0") -%}
+    {%- endif -%}
+    {%- if not wrap -%}
+        {%- set ns.class = ns.class ~ " flex-nowrap" -%}
+    {%- endif -%}
+    {%- set extra = kwargs.pop("class", "") -%}
+    {%- if extra -%}{%- set ns.class = ns.class ~ " " ~ extra -%}{%- endif -%}
+
+    <div {{ ui.util.attrs(kwargs, {"class": ns.class}) }}>
+        {{- content -}}
+    </div>
+{%- endmacro %}
+
+{%- macro column(content, span=none, offset=none, order=none) -%}
+
+    {#— canonical breakpoint → Bootstrap infix —#}
+    {%- set _bp_map = {"xs": "", "sm": "sm-", "md": "md-", "lg": "lg-", "xl": "xl-"} -%}
+
+    {#— normalise a plain int to a dict —#}
+    {%- macro _normalise(val) -%}
+        {%- if val is integer -%}{"xs": {{ val }}}{%- else -%}{{ val }}{%- endif -%}
+    {%- endmacro -%}
+
+    {%- set ns = namespace(class="") -%}
+
+    {#— span —#}
+    {%- if span is none -%}
+        {%- set ns.class = "col" -%}
+    {%- elif span is integer -%}
+        {%- set ns.class = "col-" ~ span -%}
+    {%- else -%}
+        {%- for bp, size in span.items() -%}
+            {%- set infix = _bp_map.get(bp, bp ~ "-") -%}
+            {%- set ns.class = ns.class ~ ("" if loop.first else " ") ~ "col-" ~ infix ~ size -%}
+        {%- endfor -%}
+    {%- endif -%}
+
+    {#— offset —#}
+    {%- if offset is not none -%}
+        {%- if offset is integer -%}
+            {%- set ns.class = ns.class ~ " offset-" ~ offset -%}
+        {%- else -%}
+            {%- for bp, size in offset.items() -%}
+                {%- set infix = _bp_map.get(bp, bp ~ "-") -%}
+                {%- set ns.class = ns.class ~ " offset-" ~ infix ~ size -%}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endif -%}
+
+    {#— order —#}
+    {%- if order is not none -%}
+        {%- if order is integer -%}
+            {%- set ns.class = ns.class ~ " order-" ~ order -%}
+        {%- else -%}
+            {%- for bp, val in order.items() -%}
+                {%- set infix = _bp_map.get(bp, bp ~ "-") -%}
+                {%- set ns.class = ns.class ~ " order-" ~ infix ~ val -%}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endif -%}
+
+    {%- set extra = kwargs.pop("class", "") -%}
+    {%- if extra -%}{%- set ns.class = ns.class ~ " " ~ extra -%}{%- endif -%}
+
+    <div {{ ui.util.attrs(kwargs, {"class": ns.class}) }}>
+        {{- content -}}
+    </div>
+{%- endmacro %}
