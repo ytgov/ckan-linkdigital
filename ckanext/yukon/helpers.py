@@ -1,8 +1,3 @@
-"""Template helpers of the yukon plugin.
-
-All non-private functions defined here are registered inside `tk.h` collection.
-"""
-
 from __future__ import annotations
 
 import datetime
@@ -245,11 +240,6 @@ def group_is_empty(data_dict: types.DataDict, group_name: str, dataset_type: str
     return len(group_fields) == 0
 
 
-def get_current_year():
-    """Returns the current year as an integer."""
-    return datetime.datetime.now().year
-
-
 def dataset_type_title(dataset_type: str, plural: bool = True):
     """Convert dataset type to a human-readable title.
 
@@ -284,7 +274,7 @@ def dataset_type_menu_title(dataset_type: str):
     return mapping.get(dataset_type, _(dataset_type))
 
 
-def add_matomo_siteid_to_context():
+def matomo_siteid():
     """Adds the Matomo site ID to the template context.
 
     This is used for tracking purposes.
@@ -343,17 +333,17 @@ def yukon_allow_local_login() -> bool:
     return any(fnmatch.fnmatch(ip, value) for value in config.safe_ips())
 
 
-def downloadall__count_uploaded_resources(pkg:dict[str, Any]):
-    '''Counts the number of uploaded resources in a package.
+def downloadall__count_uploaded_resources(pkg: dict[str, Any]):
+    """Counts the number of uploaded resources in a package.
 
     Excludes linked resources. Uploaded resources have url_type == 'upload'.
-    '''
+    """
     count = 0
-    for res in pkg.get('resources', []):
+    for res in pkg.get("resources", []):
         # Don't count the downloadall zip itself
-        if res.get('downloadall_metadata_modified'):
+        if res.get("downloadall_metadata_modified"):
             continue
         # Only count uploaded resources, not linked ones
-        if res.get('url_type') == 'upload':
+        if res.get("url_type") == "upload":
             count += 1
     return count

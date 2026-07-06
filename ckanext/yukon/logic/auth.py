@@ -6,17 +6,12 @@ from ckan import types
 from ckan.plugins import toolkit as tk
 
 
-def package_delete_sysadmin_only(context: types.Context, data_dict: types.DataDict):
-    """Auth function to allow only sysadmins to delete datasets."""
-    # Check if user has sysadmin role
-    if not tk.check_access("sysadmin", context):
-        raise tk.NotAuthorized("Only sysadmins can delete datasets.")
-    # Allow deletion
-    return context
+@tk.chained_auth_function
+def package_delete(next_func: Any, context: types.Context, data_dict: dict[str, Any] | None) -> types.AuthResult:
+    """Only sysadmins to delete datasets."""
+    return {"success": False, "msg": "Only sysadmins can delete datasets."}
 
 
-def yukon_matomo_sync_usage_data_sysadmin_only(context: types.Context, data_dict: dict[str, Any]):
+def yukon_matomo_sync_usage_data(context: types.Context, data_dict: dict[str, Any]) -> types.AuthResult:
     """Allow only sysadmins to trigger Matomo sync through the API."""
-    if not tk.check_access("sysadmin", context):
-        raise tk.NotAuthorized("Only sysadmins can trigger Matomo usage sync.")
-    return {"success": True}
+    return {"success": False, "msg": "Only sysadmins can trigger Matomo usage sync."}

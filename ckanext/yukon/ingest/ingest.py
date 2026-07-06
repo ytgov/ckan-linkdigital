@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import requests
-from sqlalchemy import and_
+import sqlalchemy as sa
 
 import ckan.plugins.toolkit as tk
 from ckan import model, types
@@ -69,9 +69,7 @@ class YukonGroupRecord(shared.Record):
         name = self.data["name"]
         topic = model.Group.get(name)
 
-        action = self.action_prefix + (
-            "update" if topic and self.options.get("update_existing") else "create"
-        )
+        action = self.action_prefix + ("update" if topic and self.options.get("update_existing") else "create")
         if action == self.action_prefix + "update":
             self.data["id"] = topic.id
 
@@ -104,16 +102,8 @@ class YukonPackageRecord(PackageRecord):
             if not data_dict.get(key):
                 data_dict[key] = value
 
-        groups = [
-            {"name": _title_to_name(t)}
-            for t in (raw.get("topics") or "").split(",")
-            if t
-        ]
-        tags = [
-            {"name": munge.munge_tag(t)}
-            for t in (raw.get("tags") or "").split(",")
-            if t
-        ]
+        groups = [{"name": _title_to_name(t)} for t in (raw.get("topics") or "").split(",") if t]
+        tags = [{"name": munge.munge_tag(t)} for t in (raw.get("tags") or "").split(",") if t]
 
         data_dict.update(
             {
@@ -134,9 +124,7 @@ class YukonPackageRecord(PackageRecord):
         result = super().ingest(context)
         redirect_map: RedirectMap = self.options.get("redirect_map")
         if redirect_map and (old_url := self.data.get("dkan_uri")):
-            new_url = tk.h.url_for(
-                result["result"]["type"] + ".read", id=result["result"]["name"]
-            )
+            new_url = tk.h.url_for(result["result"]["type"] + ".read", id=result["result"]["name"])
             redirect_map.add(old_url, new_url)
         self._insert_dates()
         return result
@@ -148,7 +136,7 @@ class YukonPackageRecord(PackageRecord):
             model.Session.query(model.Package)
             .filter(
                 model.Package.extras.any(
-                    and_(
+                    sa.and_(
                         model.PackageExtra.key == "dkan_node_id",
                         model.PackageExtra.value == str(dkan_node_id),
                     )
@@ -163,11 +151,7 @@ class YukonPackageRecord(PackageRecord):
         if not pkg or pkg.extras.get("dkan_node_id", "") == dkan_node_id:
             return ideal_name
 
-        name_results = (
-            model.Session.query(model.Package.name)
-            .filter(model.Package.name.ilike(f"{ideal_name}%"))
-            .all()
-        )
+        name_results = model.Session.query(model.Package.name).filter(model.Package.name.ilike(f"{ideal_name}%")).all()
         taken = {name_result[0] for name_result in name_results}
         counter = 1
         while True:
@@ -179,12 +163,8 @@ class YukonPackageRecord(PackageRecord):
 
     def _insert_dates(self):
         pkg = model.Package.get(self.data["name"])
-        pkg.metadata_created = datetime.strptime(
-            self.data["metadata_created"], "%Y-%m-%d %H:%M:%S"
-        )
-        pkg.metadata_modified = datetime.strptime(
-            self.data["metadata_modified"], "%Y-%m-%d %H:%M:%S"
-        )
+        pkg.metadata_created = datetime.strptime(self.data["metadata_created"], "%Y-%m-%d %H:%M:%S")
+        pkg.metadata_modified = datetime.strptime(self.data["metadata_modified"], "%Y-%m-%d %H:%M:%S")
         model.Session.commit()
 
 
@@ -197,7 +177,7 @@ class YukonResourceRecord(ResourceRecord):
             model.Session.query(model.Package)
             .filter(
                 model.Package.extras.any(
-                    and_(
+                    sa.and_(
                         model.PackageExtra.key == "dkan_node_id",
                         model.PackageExtra.value == str(parent_dkan_node_id),
                     )
@@ -209,9 +189,7 @@ class YukonResourceRecord(ResourceRecord):
             log.exception("The parent package does not exist.")
             return {}
 
-        unique_identifier = " ".join(
-            [data_dict[key] for key in RESOURCE_UNIQUE_FIELD[data_dict["schema_type"]]]
-        )
+        unique_identifier = " ".join([data_dict[key] for key in RESOURCE_UNIQUE_FIELD[data_dict["schema_type"]]])
         data_dict.update(
             {
                 "package_id": parent_pkg.id,
@@ -224,9 +202,7 @@ class YukonResourceRecord(ResourceRecord):
 
         if (data_dict.get("url_type") or "") == "upload":
             uploader = get_resource_uploader(data_dict)
-            Path(uploader.get_directory(data_dict["id"])).mkdir(
-                parents=True, exist_ok=True
-            )
+            Path(uploader.get_directory(data_dict["id"])).mkdir(parents=True, exist_ok=True)
             while True:
                 try:
                     response = requests.get(
@@ -285,9 +261,7 @@ class YukonResourceRecord(ResourceRecord):
         result = super().ingest(context)
         redirect_map: RedirectMap = self.options.get("redirect_map")
         if redirect_map:
-            if self.data.get("url_type") == "upload" and (
-                old_file_url := self.data.get("url")
-            ):
+            if self.data.get("url_type") == "upload" and (old_file_url := self.data.get("url")):
                 new_file_url = result["result"]["url"]
                 redirect_map.add(old_file_url, new_file_url)
 
@@ -305,9 +279,7 @@ class YukonResourceRecord(ResourceRecord):
 
     def _insert_dates(self):
         res = model.Resource.get(self.data["id"])
-        res.metadata_modified = datetime.strptime(
-            self.data["last_modified"], "%Y-%m-%d %H:%M:%S"
-        )
+        res.metadata_modified = datetime.strptime(self.data["last_modified"], "%Y-%m-%d %H:%M:%S")
         model.Session.commit()
 
 

@@ -8,48 +8,15 @@ import ckan.plugins as p
 import ckan.plugins.toolkit as tk
 from ckan.lib.plugins import DefaultTranslation
 
-from . import helpers, implementations
-from .logic import action, auth
+from . import implementations
 
 
-@tk.blanket.auth_functions(
-    {
-        "package_delete": auth.package_delete_sysadmin_only,
-        "yukon_matomo_sync_usage_data": auth.yukon_matomo_sync_usage_data_sysadmin_only,
-    }
-)
-@tk.blanket.actions(
-    {
-        "package_show": action.package_show,
-        "package_search": action.package_search,
-        "current_package_list_with_resources": (action.current_package_list_with_resources),
-        "package_create": action.package_create,
-        "package_update": action.package_update,
-        "package_set_featured": action.package_set_featured,
-        "yukon_matomo_sync_usage_data": action.yukon_matomo_sync_usage_data,
-    }
-)
-@tk.blanket.helpers(
-    {
-        "get_all_groups": helpers.get_all_groups,
-        "recently_updated_open_informations": (helpers.recently_updated_open_informations),
-        "recently_added_access_requests": (helpers.recently_added_access_requests),
-        "group_is_empty": helpers.group_is_empty,
-        "get_featured_datasets": helpers.get_featured_datasets,
-        "get_current_year": helpers.get_current_year,
-        "dataset_type_title": helpers.dataset_type_title,
-        "dataset_type_menu_title": helpers.dataset_type_menu_title,
-        "matomo_siteid": helpers.add_matomo_siteid_to_context,
-        "matomo_url": helpers.matomo_url,
-        "yukon_allow_local_login": helpers.yukon_allow_local_login,
-        "get_year_facet_items": helpers.get_year_facet_items,
-        "downloadall__count_uploaded_resources": helpers.downloadall__count_uploaded_resources,
-    }
-)
+@tk.blanket.auth_functions
+@tk.blanket.actions
+@tk.blanket.helpers
 @tk.blanket.blueprints
 @tk.blanket.cli
 @tk.blanket.config_declarations
-@tk.blanket.validators
 class YukonPlugin(
     implementations.Theme,
     implementations.PackageController,

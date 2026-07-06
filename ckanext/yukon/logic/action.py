@@ -14,76 +14,6 @@ log = logging.getLogger(__name__)
 FEATURED_DATASETS_COUNT = 3
 
 
-def is_user_editor_of_org(org_id: str, user_id: str) -> bool:
-    """Check if the user is an editor of the organization."""
-    capacity = authz.users_role_for_group_or_org(org_id, user_id)
-    return capacity == "editor"
-
-
-def is_user_admin_of_org(org_id: str, user_id: str) -> bool:
-    """Check if the user is an admin of the organization."""
-    capacity = authz.users_role_for_group_or_org(org_id, user_id)
-    return capacity == "admin"
-
-
-def is_user_sysadmin(user_id: str) -> bool:
-    """Check if the user is a sysadmin."""
-    user = model.User.get(user_id)
-    if user:
-        return user.sysadmin
-    return False
-
-
-def can_view_internal_data(user: str, org_id: str) -> bool:
-    """Check if the user can view internal data for the given organization."""
-    if not user:
-        return False
-
-    user_obj = model.User.get(user)
-    if not user_obj:
-        return False
-
-    user_id = user_obj.id
-
-    if is_user_sysadmin(user_id):
-        return True
-    if is_user_admin_of_org(org_id, user_id):
-        return True
-    return bool(is_user_editor_of_org(org_id, user_id))
-
-
-def _set_groups_list(context: types.Context, data_dict: types.DataDict):
-    """Set the groupsfield in the data_dict from the groups_list."""
-    # If the form omitted the field entirely, leave existing groups unchanged.
-    # If the field is present but empty, treat that as an invalid submission
-    # and raise a ValidationError so the UI shows a required-field message.
-    if "groups_list" not in data_dict:
-        return
-
-    gl: str | list[Any] | tuple[Any] = data_dict.get("groups_list", [])
-    empty = False
-    if isinstance(gl, str) and not gl.strip() or isinstance(gl, list | tuple) and not any(bool(x) for x in gl):
-        empty = True
-    if empty:
-        raise tk.ValidationError({"groups_list": ["Missing value"]})
-
-    groups_list = gl
-    if isinstance(groups_list, str):
-        groups_list = [groups_list]
-
-    # Build groups list, filtering out any empty values
-    groups = []
-    for group_id in [g for g in groups_list if g]:
-        try:
-            group = tk.get_action("group_show")(context, {"id": group_id})
-        except Exception:  # noqa: S112
-            # Ignore invalid group ids rather than crashing the update
-            continue
-        groups.append({key: group.get(key) for key in ("id", "name", "title")})
-    data_dict.pop("groups_list", None)
-    data_dict["groups"] = groups
-
-
 @tk.side_effect_free
 @tk.chained_action
 def package_show(up_func: types.Action, context: types.Context, data_dict: types.DataDict) -> Any:
@@ -96,7 +26,7 @@ def package_show(up_func: types.Action, context: types.Context, data_dict: types
             if value is not None:
                 result[key] = value
     org_id = result["organization"]["id"]
-    if not can_view_internal_data(user, org_id):
+    if not _can_view_internal_data(user, org_id):
         result.pop("internal_contact_name", None)
         result.pop("internal_contact_email", None)
         result.pop("internal_notes", None)
@@ -112,7 +42,7 @@ def package_search(up_func: types.Action, context: types.Context, data_dict: typ
 
     for pkg_dict in pkg_dicts:
         org_id = pkg_dict["organization"]["id"]
-        if not can_view_internal_data(user, org_id):
+        if not _can_view_internal_data(user, org_id):
             pkg_dict.pop("internal_contact_name", None)
             pkg_dict.pop("internal_contact_email", None)
             pkg_dict.pop("internal_notes", None)
@@ -130,7 +60,7 @@ def current_package_list_with_resources(
 
     for result in results:
         org_id = result["organization"]["id"]
-        if not can_view_internal_data(user, org_id):
+        if not _can_view_internal_data(user, org_id):
             result.pop("internal_contact_name", None)
             result.pop("internal_contact_email", None)
             result.pop("internal_notes", None)
@@ -154,65 +84,6 @@ def package_update(up_func: types.Action, context: types.Context, data_dict: typ
     return up_func(context, data_dict)
 
 
-def yukon_matomo_sync_usage_data(context: types.Context, data_dict: dict[str, Any]):
-    """Sync usage counters from Matomo into package extras.
-
-    This action is intended for scheduled/API-triggered syncs and defaults to
-    a conservative batch size to avoid overloading Matomo.
-    """
-
-    tk.check_access("yukon_matomo_sync_usage_data", context, data_dict)
-
-    dry_run = bool(data_dict.get("dry_run", False))
-    dataset_refs = data_dict.get("dataset_refs") or []
-    limit = data_dict.get("limit")
-    offset = data_dict.get("offset")
-
-    if limit is not None:
-        try:
-            limit = int(limit)
-        except (TypeError, ValueError):
-            raise tk.ValidationError({"limit": ["Must be an integer"]})
-
-    if offset is not None:
-        try:
-            offset = int(offset)
-        except (TypeError, ValueError):
-            raise tk.ValidationError({"offset": ["Must be an integer"]})
-
-    if isinstance(dataset_refs, str):
-        dataset_refs = [dataset_refs]
-    elif not isinstance(dataset_refs, list | tuple):
-        raise tk.ValidationError({"dataset_refs": ["Must be a string or a list of strings"]})
-
-    # Keep API-triggered runs conservative unless the caller scopes them.
-    if not dataset_refs and limit is None:
-        limit = 25
-
-    # Optional hard ceiling from config. 0 or unset means unlimited.
-    max_limit = tk.config.get("ckanext.yukon.matomo.api_sync_max_limit", 0)
-    try:
-        max_limit = int(max_limit)
-    except (TypeError, ValueError):
-        max_limit = 0
-
-    if max_limit > 0 and limit is not None and limit > max_limit:
-        raise tk.ValidationError({"limit": [f"Must be less than or equal to {max_limit}"]})
-    if offset is not None and offset < 0:
-        raise tk.ValidationError({"offset": ["Must be greater than or equal to 0"]})
-
-    summary: dict[str, Any] = matomo_sync.sync_usage_data(
-        dry_run=dry_run,
-        limit=limit,
-        offset=offset,
-        dataset_refs=list(dataset_refs) if dataset_refs else None,
-    )
-    summary["limit"] = limit
-    summary["offset"] = offset or 0
-    summary["dataset_refs"] = list(dataset_refs)
-    return summary
-
-
 def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, Any]:
     """Sets three datasets as featured and removes previous featured datasets.
 
@@ -231,7 +102,7 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
     """
     # Check if the user is a sysadmin
     user = context.get("user")
-    if not user or not is_user_sysadmin(user):
+    if not authz.is_sysadmin(user):
         raise tk.NotAuthorized("Only sysadmins can use this API.")  # noqa: TRY003
 
     # Extract dataset IDs from data_dict
@@ -354,6 +225,115 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
         raise tk.ValidationError({"is_featured": [f"Failed to set featured datasets: {str(e)}"]}) from e
     else:
         return {"success": True, "message": "Featured datasets updated successfully."}
+
+
+def yukon_matomo_sync_usage_data(context: types.Context, data_dict: dict[str, Any]):
+    """Sync usage counters from Matomo into package extras.
+
+    This action is intended for scheduled/API-triggered syncs and defaults to
+    a conservative batch size to avoid overloading Matomo.
+    """
+
+    tk.check_access("yukon_matomo_sync_usage_data", context, data_dict)
+
+    dry_run = bool(data_dict.get("dry_run", False))
+    dataset_refs = data_dict.get("dataset_refs") or []
+    limit = data_dict.get("limit")
+    offset = data_dict.get("offset")
+
+    if limit is not None:
+        try:
+            limit = int(limit)
+        except (TypeError, ValueError):
+            raise tk.ValidationError({"limit": ["Must be an integer"]})
+
+    if offset is not None:
+        try:
+            offset = int(offset)
+        except (TypeError, ValueError):
+            raise tk.ValidationError({"offset": ["Must be an integer"]})
+
+    if isinstance(dataset_refs, str):
+        dataset_refs = [dataset_refs]
+    elif not isinstance(dataset_refs, list | tuple):
+        raise tk.ValidationError({"dataset_refs": ["Must be a string or a list of strings"]})
+
+    # Keep API-triggered runs conservative unless the caller scopes them.
+    if not dataset_refs and limit is None:
+        limit = 25
+
+    # Optional hard ceiling from config. 0 or unset means unlimited.
+    max_limit = tk.config.get("ckanext.yukon.matomo.api_sync_max_limit", 0)
+    try:
+        max_limit = int(max_limit)
+    except (TypeError, ValueError):
+        max_limit = 0
+
+    if max_limit > 0 and limit is not None and limit > max_limit:
+        raise tk.ValidationError({"limit": [f"Must be less than or equal to {max_limit}"]})
+    if offset is not None and offset < 0:
+        raise tk.ValidationError({"offset": ["Must be greater than or equal to 0"]})
+
+    summary: dict[str, Any] = matomo_sync.sync_usage_data(
+        dry_run=dry_run,
+        limit=limit,
+        offset=offset,
+        dataset_refs=list(dataset_refs) if dataset_refs else None,
+    )
+    summary["limit"] = limit
+    summary["offset"] = offset or 0
+    summary["dataset_refs"] = list(dataset_refs)
+    return summary
+
+
+def _can_view_internal_data(user: str, org_id: str) -> bool:
+    """Check if the user can view internal data for the given organization."""
+    if not user:
+        return False
+
+    user_obj = model.User.get(user)
+    if not user_obj:
+        return False
+
+    user_id = user_obj.id
+
+    if authz.is_sysadmin(user_id):
+        return True
+    if authz.users_role_for_group_or_org(org_id, user_id) == "admin":
+        return True
+    return authz.users_role_for_group_or_org(org_id, user_id) == "editor"
+
+
+def _set_groups_list(context: types.Context, data_dict: types.DataDict):
+    """Set the groupsfield in the data_dict from the groups_list."""
+    # If the form omitted the field entirely, leave existing groups unchanged.
+    # If the field is present but empty, treat that as an invalid submission
+    # and raise a ValidationError so the UI shows a required-field message.
+    if "groups_list" not in data_dict:
+        return
+
+    gl: str | list[Any] | tuple[Any] = data_dict.get("groups_list", [])
+    empty = False
+    if isinstance(gl, str) and not gl.strip() or isinstance(gl, list | tuple) and not any(bool(x) for x in gl):
+        empty = True
+    if empty:
+        raise tk.ValidationError({"groups_list": ["Missing value"]})
+
+    groups_list = gl
+    if isinstance(groups_list, str):
+        groups_list = [groups_list]
+
+    # Build groups list, filtering out any empty values
+    groups = []
+    for group_id in [g for g in groups_list if g]:
+        try:
+            group = tk.get_action("group_show")(context, {"id": group_id})
+        except Exception:  # noqa: S112
+            # Ignore invalid group ids rather than crashing the update
+            continue
+        groups.append({key: group.get(key) for key in ("id", "name", "title")})
+    data_dict.pop("groups_list", None)
+    data_dict["groups"] = groups
 
 
 def _update_package_extra(package_obj: model.Package, key: str, value: Any):
