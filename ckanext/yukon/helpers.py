@@ -341,3 +341,19 @@ def yukon_allow_local_login() -> bool:
         log.warning("Cannot determine IP using %s header", config.ip_header())
         return False
     return any(fnmatch.fnmatch(ip, value) for value in config.safe_ips())
+
+
+def downloadall__count_uploaded_resources(pkg:dict[str, Any]):
+    '''Counts the number of uploaded resources in a package.
+
+    Excludes linked resources. Uploaded resources have url_type == 'upload'.
+    '''
+    count = 0
+    for res in pkg.get('resources', []):
+        # Don't count the downloadall zip itself
+        if res.get('downloadall_metadata_modified'):
+            continue
+        # Only count uploaded resources, not linked ones
+        if res.get('url_type') == 'upload':
+            count += 1
+    return count

@@ -1,17 +1,21 @@
 {#
-Displays a sidebar module with navigation containing the provided resources.
-If no resources are provided then the module will not be displayed.
+    Displays a sidebar module with navigation containing the provided resources.
+    If no resources are provided then the module will not be displayed.
 
-pkg       - The package dict that owns the resources.
-active    - The id of the currently displayed resource.
-action    - The resource action to use (default: 'read', meaning route 'resource.read').
+    pkg       - The package dict that owns the resources.
+    active    - The id of the currently displayed resource.
+    action    - The resource action to use (default: 'read', meaning route 'resource.read').
 
-Example:
+    Example:
 
-  {% snippet "package/snippets/resources.html", pkg=pkg, active=res.id %}
+    {% snippet "package/snippets/resources.html", pkg=pkg, active=res.id %}
 
-#}
+    #}
+{#    Don't display the Download All ZIP resource #}
+{% set zip_res = h.downloadall__pop_zip_resource(pkg) %}
+
 {% set resources = pkg.resources or [] %}
+
 {% set can_edit = pkg and h.check_access('package_update', {'id':pkg.id }) %}
 {% if pkg and resources %}
   {% block resources %}

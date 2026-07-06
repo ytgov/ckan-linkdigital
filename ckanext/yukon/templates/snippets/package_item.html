@@ -13,6 +13,8 @@
     #}
 {% set title = package.title or package.name %}
 {% set notes = h.render_markdown(package.notes) | striptags | truncate(180) %}
+{#    Don't display the Download All ZIP resource #}
+{% set zip_res = h.downloadall__pop_zip_resource(package) %}
 
 
 {% block package_item %}

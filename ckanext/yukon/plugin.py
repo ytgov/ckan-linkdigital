@@ -81,6 +81,7 @@ from .logic import action, auth
         'matomo_url': helpers.matomo_url,
         "yukon_allow_local_login": helpers.yukon_allow_local_login,
         "get_year_facet_items": helpers.get_year_facet_items,
+        "downloadall__count_uploaded_resources": helpers.downloadall__count_uploaded_resources,
     }
 )
 @tk.blanket.blueprints
