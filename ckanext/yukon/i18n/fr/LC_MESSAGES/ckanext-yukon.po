@@ -19,6 +19,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
 
+#: ckanext/downloadall/templates/package/read.html:12
+msgid "This download is not currently available"
+msgstr ""
+
+#: ckanext/downloadall/templates/package/read.html:14
+msgid "Download all"
+msgstr "Alle herunterladen"
+
 #: ckanext/yukon/templates/footer.html:22
 msgid "Footer menu"
 msgstr "Menu de bas de page"
