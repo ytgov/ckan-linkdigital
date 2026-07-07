@@ -8,9 +8,9 @@
         _paq.push(['trackPageView']);
         _paq.push(['enableLinkTracking']);
         (function() {
-            var u="{{ h.matomo_url() }}";
+            var u="{{ h.yukon_matomo_url() }}";
             _paq.push(['setTrackerUrl', u+'matomo.php']);
-            _paq.push(['setSiteId', "{{ h.matomo_siteid() }}"]);
+            _paq.push(['setSiteId', "{{ h.yukon_matomo_siteid() }}"]);
             var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
             g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
         })();

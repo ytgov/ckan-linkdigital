@@ -102,17 +102,14 @@ def package_set_featured(context: Any, data_dict: dict[str, Any]) -> dict[str, A
     :returns: A success message or raises an error
     :rtype: str
     """
-    # Check if the user is a sysadmin
-    user = context.get("user")
-    if not authz.is_sysadmin(user):
-        raise tk.NotAuthorized("Only sysadmins can use this API.")  # noqa: TRY003
+    tk.check_access("yukon_package_set_featured", context, data_dict)
 
     # Extract dataset IDs from data_dict
     dataset_ids = data_dict.get("dataset_ids")
     if not dataset_ids or len(dataset_ids) != FEATURED_DATASETS_COUNT:
         raise tk.ValidationError(
             {
-                "is_fetured": ["Exactly three dataset IDs or names must be provided."],
+                "is_featured": ["Exactly three dataset IDs or names must be provided."],
             }
         )
 

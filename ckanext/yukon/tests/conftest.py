@@ -28,6 +28,33 @@ class DataFactory(factories.Dataset):
     license_id = "cc-by"
 
 
+@register(_name="information")
+class InformationFactory(factories.Dataset):
+    type = "information"
+    owner_org = factory.LazyFunction(lambda: OrganizationFactory()["id"])
+    internal_contact_email = factory.Faker("email")
+    internal_contact_name = factory.Faker("name")
+    license_id = "cc-by"
+
+
+@register(_name="access_request")
+class AccessRequestFactory(factories.Dataset):
+    type = "access-requests"
+    owner_org = factory.LazyFunction(lambda: OrganizationFactory()["id"])
+    date_of_request = factory.Faker("date")
+    file_id = factory.Faker("uuid4")
+    response_type = factory.Faker("random_element", elements=["not_specified", "granted_in_full", "no_records_found"])
+    license_id = "cc-by"
+
+
+@register(_name="pia_summary")
+class PiaSummaryFactory(factories.Dataset):
+    type = "pia-summaries"
+    # owner_org = factory.LazyFunction(lambda: OrganizationFactory()["id"])
+    # internal_contact_email = factory.Faker("email")
+    # internal_contact_name = factory.Faker("name")
+    # license_id = "cc-by"
+
 
 @register(_name="organization")
 class OrganizationFactory(factories.Organization):

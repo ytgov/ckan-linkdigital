@@ -64,7 +64,7 @@
                             "input_placeholder": _("Enter open information search terms"),
                             "action": lang_prefix ~ url_for('information.search'),
                             "list_title": _("Recently updated:"),
-                            "list": h.recently_updated_open_informations(),
+                            "list": h.yukon_recently_updated_open_informations(),
                             "list_cta_title": _("See more open information publications"),
                             "list_cta_href": lang_prefix ~ url_for('information.search'),
                             "lang_prefix": lang_prefix
@@ -80,7 +80,7 @@
                             "input_placeholder": _("Enter open data search terms"),
                             "action": lang_prefix ~ url_for('data.search'),
                             "list_title": _("Featured datasets:"),
-                            "list": h.get_featured_datasets(),
+                            "list": h.yukon_get_featured_datasets(),
                             "list_cta_title": _("See more open data datasets"),
                             "list_cta_href": lang_prefix ~ url_for('data.search'),
                             "lang_prefix": lang_prefix
@@ -96,7 +96,7 @@
                             "input_placeholder": _("Enter request search terms"),
                             "action": lang_prefix ~ url_for('access-requests.search'),
                             "list_title": _("Recently added:"),
-                            "list": h.recently_added_access_requests(),
+                            "list": h.yukon_recently_added_access_requests(),
                             "list_cta_title": _("See more completed Access to Information requests"),
                             "list_cta_href": lang_prefix ~ url_for('access-requests.search'),
                             "lang_prefix": lang_prefix

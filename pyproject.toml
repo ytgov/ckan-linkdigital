@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ckanext-yukon"
-version = "1.2.2"
+version = "1.2.3"
 description = "Yukon 2025 CKAN design extension"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -12,7 +12,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
 keywords = [ "CKAN" ]
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 dependencies = [ "typing_extensions", "pyyaml",]
 authors = [
     {name = "Link Digital", email = "info@linkdigital.com.au"},

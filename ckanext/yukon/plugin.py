@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from typing_extensions import override
-
 import ckan.plugins as p
 import ckan.plugins.toolkit as tk
 from ckan.lib.plugins import DefaultTranslation
@@ -29,11 +27,6 @@ class YukonPlugin(
 
     p.implements(p.ITranslation)
     p.implements(p.IFacets)
-
-    # ITranslation
-    @override
-    def i18n_locales(self):
-        return ["en", "fr"]
 
     # IFacets
     def dataset_facets(self, facets_dict: dict[str, Any], package_type: str):

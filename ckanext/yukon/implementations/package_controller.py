@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 from typing_extensions import override
@@ -13,14 +14,7 @@ class PackageController(p.IPackageController):
     @override
     def before_dataset_index(self, pkg_dict: dict[str, Any]):
         """Add year_published field to the search index and exclude downloadall-generated resources from the facet."""
-        if pkg_dict.get("metadata_created"):
-            try:
-                # Extract year from metadata_created timestamp
-                # Format is typically: 2024-01-26T12:34:56.789012
-                year = pkg_dict["metadata_created"][:4]
-                pkg_dict["year_published"] = year
-            except (KeyError, IndexError, ValueError):
-                pass
+        pkg_dict["year_published"] = datetime.datetime.fromisoformat(pkg_dict["metadata_created"]).year
 
         # Remove downloadall auto-generated ZIP resources from the indexed
         # res_format facet. By the time before_dataset_index is called, CKAN

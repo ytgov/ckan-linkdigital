@@ -17,3 +17,34 @@ groups:
             description: |
                 Header that containing the real IP of the visitor. Set by
                 reverse-proxy.
+
+          - key: ckanext.yukon.limits.featured_datasets
+            editable: true
+            default: 3
+            type: int
+            description: |
+              Number of featured datasets to show on the home page.
+
+          - key: ckanext.yukon.limits.updated_information
+            editable: true
+            default: 3
+            type: int
+            description: |
+              Number of information records shown on the home page.
+
+          - key: ckanext.yukon.limits.added_request
+            editable: true
+            default: 3
+            type: int
+            description: |
+              Number of requests shown on the home page.
+
+          - key: ckanext.yukon.matomo.site_id
+            default: "1"
+            editable: true
+            description: Matomo site ID for tracking
+
+          - key: ckanext.yukon.matomo.tracker_url
+            default: "https://analytics.gov.yk.ca/"
+            editable: true
+            description: Matomo tracking URL

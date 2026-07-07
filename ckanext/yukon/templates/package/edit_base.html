@@ -2,14 +2,14 @@
 
 {% block title %}
     {%- block subtitle %}
-        {{ _('Edit') }} {{ h.dataset_type_menu_title(dataset_type) }}
+        {{ _('Edit') }} {{ h.yukon_dataset_type_menu_title(dataset_type) }}
     {% endblock -%}
     {%- if self.subtitle()|trim %} {{ g.template_title_delimiter }} {% endif -%}
     {{ g.site_title }}
 {% endblock %}
 {{ super() }}
 
-{% set dataset_type_title=h.dataset_type_title(dataset_type) %}
+{% set dataset_type_title=h.yukon_dataset_type_title(dataset_type) %}
 {% block breadcrumb_content %}
     {% if pkg %}
         <li class="active">
@@ -20,5 +20,5 @@
 {% endblock %}
 
 {% block content_action %}
-    {% link_for _('View') ~ ' ' ~ h.dataset_type_menu_title(dataset_type), named_route=pkg.type ~ '.read', id=pkg.name, class_='btn btn-secondary', icon='eye' %}
+    {% link_for _('View') ~ ' ' ~ h.yukon_dataset_type_menu_title(dataset_type), named_route=pkg.type ~ '.read', id=pkg.name, class_='btn btn-secondary', icon='eye' %}
 {% endblock %}
