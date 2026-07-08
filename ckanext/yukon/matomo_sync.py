@@ -116,6 +116,10 @@ class MatomoClient:
         for response in responses:
             if isinstance(response, list) and response:
                 response = response[0]
+
+            if not response:
+                continue
+
             if not isinstance(response, dict):
                 log.warning("Unexpected visit record: %s", response)
                 continue
