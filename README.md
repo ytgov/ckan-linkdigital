@@ -14,7 +14,6 @@ Additional information can be found in the [Deployment documentation](DEPLOYMENT
 
 ## Installation
 
-
 1. Install the project using [CKAN dependency manager](https://github.com/dataShades/ckan-deps-installer):
 
     ```sh

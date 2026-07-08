@@ -1,8 +1,7 @@
 {% ckan_extends %}
+
 {% block head_extras %}
     {{super()}}
-    <link rel="stylesheet" href="/css/styles.css" />
-    <link rel="stylesheet" href="/css/yukon.css" />
     <script>
         var _paq = window._paq = window._paq || [];
         _paq.push(['trackPageView']);
@@ -17,6 +16,13 @@
     </script>
 {% endblock %}
 
-{% block links %}
-    <link rel="shortcut icon" type="image/x-icon" href="{{ h.url_for_static('/images/favicon.ico') }}?v=2" />
-{% endblock %}
+
+{%- block styles -%}
+    {{ super() }}
+    {%- asset "theming/yukon/styles" -%}
+{%- endblock %}
+
+{%- block scripts -%}
+    {{ super() }}
+    {%- asset "theming/yukon/scripts" -%}
+{%- endblock %}

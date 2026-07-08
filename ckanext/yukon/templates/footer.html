@@ -24,55 +24,53 @@
                         class="block block-menu navigation menu--menu-wet-footer"
                     >
                         <h2 class="block-title visually-hidden" id="block-footermenu-menu">
-                            {% trans %}Footer menu{% endtrans %}
+                            {{ _("Footer menu") }}
                         </h2>
 
                         <ul class="menu">
                             <li class="menu-item">
-                                <a href="https://yukon.ca{% if lang_prefix == '/fr' %}/fr{% endif %}">{% trans %}Home{% endtrans %}</a>
+                                <a href="https://yukon.ca{% if lang_prefix == '/fr' %}/fr{% endif %}">{{ _("Home") }}</a>
                             </li>
                             <li class="menu-item">
-                                <a href="https://yukon.ca{% if lang_prefix == '/fr' %}/fr{% endif %}/documents">{% trans %}Documents{% endtrans %}</a>
+                                <a href="https://yukon.ca{% if lang_prefix == '/fr' %}/fr{% endif %}/documents">{{ _("Documents") }}</a>
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/arts-and-culture/events">{% trans %}Events{% endtrans %}</a>
+                                    <a href="https://yukon.ca/en/arts-and-culture/events">{{ _("Events") }}</a>
                                 {% else %}
-                                    <a href="https://yukon.ca/fr/arts-et-culture/activites">{% trans %}Events{% endtrans %}</a>
+                                    <a href="https://yukon.ca/fr/arts-et-culture/activites">{{ _("Events") }}</a>
                                 {% endif %}
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/forms">{% trans %}Forms{% endtrans %}</a>
+                                    <a href="https://yukon.ca/forms">{{ _("Forms") }}</a>
                                 {% else %}
-                                    <a href="https://yukon.ca/fr/formulaires">{% trans %}Forms{% endtrans %}</a>
+                                    <a href="https://yukon.ca/fr/formulaires">{{ _("Forms") }}</a>
                                 {% endif %}
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/news">{% trans %}News{% endtrans %}</a>
+                                    <a href="https://yukon.ca/en/news">{{ _("News") }}</a>
                                 {% else %}
-                                    <a href="https://yukon.ca/fr/communiques-de-presse">{% trans %}News{% endtrans %}</a>
+                                    <a href="https://yukon.ca/fr/communiques-de-presse">{{ _("News") }}</a>
                                 {% endif %}
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a
-                                        href="https://yukon.ca/en/your-government/legislation/find-government-legislation"
-                                    >{% trans %}Legislation{% endtrans %}</a
-                                                                         >
+                                    <a href="https://yukon.ca/en/your-government/legislation/find-government-legislation" >
+                                        {{ _("Legislation") }}
+                                    </a>
                                 {% else %}
-                                    <a
-                                        href="https://yukon.ca/fr/textes-legislatifs"
-                                    >{% trans %}Legislation{% endtrans %}</a
-                                                                         >
+                                    <a href="https://yukon.ca/fr/textes-legislatifs" >
+                                        {{ _("Legislation") }}
+                                    </a>
                                 {% endif %}
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/places">{% trans %}Places{% endtrans %}</a>
+                                    <a href="https://yukon.ca/en/places">{{ _("Places") }}</a>
                                 {% else %}
-                                    <a href="https://yukon.ca/fr/etablissements-installations-et-bureaux">{% trans %}Places{% endtrans %}</a>
+                                    <a href="https://yukon.ca/fr/etablissements-installations-et-bureaux">{{ _("Places") }}</a>
                                 {% endif %}
                             </li>
                             </li>
@@ -88,68 +86,52 @@
                             class="block-title visually-hidden"
                             id="block-secondaryfootermenu-menu"
                         >
-                            {% trans %}Secondary Footer Menu{% endtrans %}
+                            {{ _("Secondary Footer Menu") }}
                         </h2>
 
                         <ul class="menu">
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a
-                                        href="https://yukon.ca/en/your-government/contact-and-follow-government/contact-government"
-                                        data-drupal-link-system-path="node/1028"
-                                    >{% trans %}Contact us{% endtrans %}</a
-                                                                        >
+                                    <a href="https://yukon.ca/en/your-government/contact-and-follow-government/contact-government" >
+                                        {{ _("Contact us") }}
+                                    </a>
                                 {% else %}
-                                    <a
-                                        href="https://yukon.ca/fr/votre-gouvernement/joindre-ou-suivre-le-gouvernement/contacter-le-gouvernement"
-                                        data-drupal-link-system-path="node/1028"
-                                    >{% trans %}Contact us{% endtrans %}</a
-                                                                        >
+                                    <a href="https://yukon.ca/fr/votre-gouvernement/joindre-ou-suivre-le-gouvernement/contacter-le-gouvernement" >
+                                        {{ ("Contact us") }}
+                                    </a>
                                 {% endif %}
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a
-                                        href="https://yukon.ca/en/copyright"
-                                        data-drupal-link-system-path="node/654"
-                                    >{% trans %}Copyright{% endtrans %}</a
-                                                                       >
+                                    <a href="https://yukon.ca/en/copyright" >
+                                        {{ _("Copyright") }}
+                                    </a>
                                 {% else %}
-                                    <a
-                                        href="https://yukon.ca/fr/droit-dauteur"
-                                        data-drupal-link-system-path="node/654"
-                                    >{% trans %}Copyright{% endtrans %}</a
-                                                                       >
+                                    <a href="https://yukon.ca/fr/droit-dauteur" >
+                                        {{ _("Copyright") }}
+                                    </a>
                                 {% endif %}
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a
-                                        href="https://yukon.ca/en/disclaimer"
-                                        data-drupal-link-system-path="node/664"
-                                    >{% trans %}Disclaimer{% endtrans %}</a
-                                                                        >
+                                    <a href="https://yukon.ca/en/disclaimer" >
+                                        {{ _("Disclaimer") }}
+                                    </a>
                                 {% else %}
-                                    <a
-                                        href="https://yukon.ca/fr/avertissement"
-                                        data-drupal-link-system-path="node/664"
-                                    >{% trans %}Disclaimer{% endtrans %}</a
-                                                                        >
+                                    <a href="https://yukon.ca/fr/avertissement" >
+                                        {{ _("Disclaimer") }}
+                                    </a>
                                 {% endif %}
                             </li>
                             <li class="menu-item">
                                 {% if lang_prefix != '/fr' %}
-                                    <a
-                                        href="https://yukon.ca/en/privacy-statement"
-                                        data-drupal-link-system-path="node/662"
-                                    >{% trans %}Privacy statement{% endtrans %}</a
-                                                                               >
+                                    <a href="https://yukon.ca/en/privacy-statement" >
+                                        {{ _("Privacy statement") }}
+                                    </a>
                                 {% else %}
-                                    <a
-                                        href="https://yukon.ca/fr/avis-de-confidentialite"
-                                        data-drupal-link-system-path="node/662"
-                                    >{% trans %}Privacy statement{% endtrans %}</a
-                                                                               >
+                                    <a href="https://yukon.ca/fr/avis-de-confidentialite" >
+                                        {{ _("Privacy statement") }}
+                                    </a>
                                 {% endif %}
                             </li>
                         </ul>

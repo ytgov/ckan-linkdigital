@@ -13,17 +13,28 @@ import random
 from urllib.parse import urlencode, urlparse
 
 from ckan.plugins import toolkit as tk
-
+from ckan import model
 from .matomo_sync import (
     MatomoClient,
     _active_packages,
     _dataset_download_urls,
     _dataset_urls_multilang,
-    _get_package_by_ref,
     _shift_years,
 )
 
 log = logging.getLogger(__name__)
+
+
+def _get_package_by_ref(dataset_ref: str):
+    package = model.Package.get(dataset_ref)
+    if package and package.state == "active":
+        return package
+
+    package = model.Session.query(model.Package).filter_by(name=dataset_ref, state="active").first()
+    if package:
+        return package
+
+    raise tk.ObjectNotFound(f"Dataset not found: {dataset_ref}")
 
 
 class MatomoTrackingClient(MatomoClient):

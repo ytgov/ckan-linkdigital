@@ -11,6 +11,11 @@ UPDATED_INFO_LIMIT = "ckanext.yukon.limits.updated_information"
 FEATURED_LIMIT = "ckanext.yukon.limits.featured_datasets"
 MATOMO_SITE_ID = "ckanext.yukon.matomo.site_id"
 MATOMO_URL = "ckanext.yukon.matomo.tracker_url"
+MATOMO_API_URL = "ckanext.yukon.matomo.api_url"
+MATOMO_TOKEN = "ckanext.yukon.matomo.token_auth"  # noqa: S105
+MATOMO_TIMEOUT = "ckanext.yukon.matomo.timeout_seconds"
+MATOMO_SYNC_LIMIT = "ckanext.yukon.matomo.api_sync_max_limit"
+
 
 def ip_header() -> str:
     return tk.config[IP_HEADER]
@@ -42,3 +47,19 @@ def matomo_tracker_url() -> str:
         url += "/"
 
     return url
+
+
+def matomo_api_url() -> str:
+    return tk.config[MATOMO_API_URL].rstrip("/")
+
+
+def matomo_token() -> str:
+    return tk.config[MATOMO_TOKEN]
+
+
+def matomo_timeout() -> int:
+    return tk.config[MATOMO_TIMEOUT]
+
+
+def matomo_sync_limit() -> int:
+    return tk.config[MATOMO_SYNC_LIMIT]
