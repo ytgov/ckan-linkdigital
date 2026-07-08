@@ -1,3 +1,24 @@
+{%- macro footer_main_nav(content) -%}
+    {%- do kwargs -%}
+    {{ content }}
+{%- endmacro %}
+
+{%- macro footer_secondary_nav(content) -%}
+    <nav {{ ui.util.attrs(kwargs, {"role": "navigation"}) }}>
+        <ul class="menu">
+            {{ content }}
+        </ul>
+    </nav>
+{%- endmacro %}
+
+{%- macro main_nav(content) -%}
+    {{ ui.nav(content, **ui.util.augment_attrs(kwargs, {"class": "navbar-nav ms-auto mb-2 mb-lg-0"})) }}
+{%- endmacro %}
+
+
+
+
+
 
 {%- macro accordion_wrapper(content, id) -%}
     <div {{ ui.util.attrs(kwargs, {"class": "accordion"}) }} {% if id -%}id="{{ id }}"{%- endif %}>{{ content }}</div>
@@ -23,20 +44,6 @@
 
 {%- macro content_nav(content) -%}
     {{ ui.nav(content, **ui.util.augment_attrs(kwargs, {"class": "nav nav-tabs"})) }}
-{%- endmacro %}
-
-{%- macro footer_main_nav(content) -%}
-    <ul {{ ui.util.attrs(kwargs, {"class": "list-unstyled"}) }}>
-        {{ content }}
-    </ul>
-{%- endmacro %}
-
-{%- macro footer_secondary_nav(content) -%}
-    {{ ui.nav(content, **ui.util.augment_attrs(kwargs, {"class": "nav nav-tabs"})) }}
-{%- endmacro %}
-
-{%- macro main_nav(content) -%}
-    {{ ui.nav(content, **ui.util.augment_attrs(kwargs, {"class": "navbar-nav ms-auto mb-2 mb-lg-0"})) }}
 {%- endmacro %}
 
 {%- macro nav(content) -%}

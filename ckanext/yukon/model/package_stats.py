@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any, ClassVar
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, backref, relationship
-from sqlalchemy.orm.relationships import RelationshipProperty
+from sqlalchemy.orm import Mapped, backref, mapped_column, relationship
 
-import ckan.plugins.toolkit as tk
 from ckan import model
 from ckan.lib.dictization import table_dictize
 
+text = Annotated[str, mapped_column(sa.TEXT)]
 
-class PackageStats(tk.BaseModel):  # pyright: ignore[reportUntypedBaseClass]
+
+@model.registry.mapped_as_dataclass
+class PackageStats:
     """Model with Matomo analytics details.
 
     Keyword Args:
@@ -27,24 +28,29 @@ class PackageStats(tk.BaseModel):  # pyright: ignore[reportUntypedBaseClass]
         ```
     """
 
-    __table__: sa.Table = sa.Table(
-        "yukon_package_stats",
-        tk.BaseModel.metadata,
-        sa.Column("id", sa.UnicodeText, sa.ForeignKey(model.Package.id, ondelete="CASCADE"), primary_key=True),
-        sa.Column("total_visits", sa.Integer, nullable=False, default=0, server_default="0"),
-        sa.Column("total_downloads", sa.Integer, nullable=False, default=0, server_default="0"),
-        sa.Column("last_quarter_visits", sa.Integer, nullable=False, default=0, server_default="0"),
-        sa.Column("last_quarter_downloads", sa.Integer, nullable=False, default=0, server_default="0"),
+    __table__: ClassVar[sa.Table]
+
+    __tablename__: ClassVar[str] = "yukon_package_stats"
+    __table_args__: ClassVar[tuple[Any, ...]] = (
+        sa.ForeignKeyConstraint(
+            ["id"],
+            ["package.id"],
+            ondelete="CASCADE",
+        ),
     )
 
-    id: Mapped[str]
-    total_visits: Mapped[int]
-    total_downloads: Mapped[int]
-    last_quarter_visits: Mapped[int]
-    last_quarter_downloads: Mapped[int]
+    id: Mapped[text] = mapped_column(primary_key=True)
+    total_visits: Mapped[int] = mapped_column(default=0)
+    total_downloads: Mapped[int] = mapped_column(default=0)
+    last_quarter_visits: Mapped[int] = mapped_column(default=0)
+    last_quarter_downloads: Mapped[int] = mapped_column(default=0)
 
-    package: RelationshipProperty[model.Package] = relationship(
-        model.Package, lazy="joined", backref=backref("yukon_stats", uselist=False)
+    package: Mapped[model.Package] = relationship(
+        model.Package,
+        lazy="joined",
+        backref=backref("yukon_stats", uselist=False),
+        init=False,
+        compare=False,
     )
 
     def dictize(self) -> dict[str, Any]:

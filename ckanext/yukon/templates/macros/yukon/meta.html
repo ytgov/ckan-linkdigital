@@ -1,3 +1,53 @@
+{%- macro footer(content) -%}
+    <footer {{ ui.util.attrs(kwargs, {"class": "bg-eden"}) }}>{{ content }}</footer>
+{%- endmacro %}
+
+{%- macro footer_main(content) -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "footer-left overflow-hidden"}) }}>
+        <div class="container-lg footer-logos">
+            {{ content }}
+        </div>
+
+    </div>
+{%- endmacro %}
+
+{%- macro footer_secondary(content, french) -%}
+    {% set current_url = request.url | urlencode %}
+    {%- set feedback_url = "https://forms2.service.yukon.ca/content/yukon-forms/ca" -%}
+    {%- if french -%}
+        {%- set feedback_url = feedback_url ~ "/fr/hpw/Parlez-nous-de-votre-experience-dutilisation-des-services-en-ligne.html" -%}
+    {%- else -%}
+        {%- set feedback_url = feedback_url ~ "/en/hpw/submit-feedback-about-your-digital-service-experience.html" -%}
+    {%- endif %}
+    {% set feedback_url = feedback_url ~ "?onlineService=Open%20government%20portal&url_referrer=" ~ current_url ~ ("&afAcceptLang=fr-ca" if french else "") %}
+
+    <div {{ ui.util.attrs(kwargs, {"class": "footer-right bg-tiber pb-2"}) }}>
+        <div class="container-lg d-md-flex justify-content-md-between" >
+            <div class="footer__menus text-base d-md-flex w-auto pt-4">
+                <div class="region region-footer-menu">
+                    {{ content }}
+
+                </div>
+            </div>
+            <div class="footer__legal font-light w-auto flex pt-2 pt-md-4 pb-2 ms-1 text-end">
+                ©&nbsp;{{ ui.util.now().year }}&nbsp;<a href="https://yukon.ca{{ '/fr' if french }}">{{ _("Government of Yukon") }}</a>
+                <div class="footer__feedback mt-1" style="font-weight: normal;">
+                    <a id="footer-feedback-link" class="yg-submit-feedback-link" href="{{ feedback_url }}" target="_blank" >
+                        {{ _("Formuler un commentaire") if french else _("Submit website feedback") }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{%- endmacro %}
+
+
+
+
+
+
+
+
 {%- macro account(content) -%}
     <div {{ ui.util.attrs(kwargs, {"class": "account-masthead"}) }}>
         {{ content }}
@@ -33,16 +83,4 @@
             </nav>
         {%- endcall %}
     </header>
-{%- endmacro %}
-
-{%- macro footer(content) -%}
-    <footer {{ ui.util.attrs(kwargs, {"class": "site-footer"}) }}>{{ content }}</footer>
-{%- endmacro %}
-
-{%- macro footer_main(content) -%}
-    {%- do kwargs -%}{{ content }}
-{%- endmacro %}
-
-{%- macro footer_secondary(content) -%}
-    {%- do kwargs -%}
 {%- endmacro %}

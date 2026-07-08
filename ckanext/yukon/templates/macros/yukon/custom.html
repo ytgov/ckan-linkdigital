@@ -1,0 +1,61 @@
+{% macro yukon_search_input(args) %}
+    <form action="{{ args.action }}">
+        <div class="input-group">
+            <input
+                class="form-control border border-warning p-2"
+                placeholder="{{ args.placeholder }}"
+                aria-label="{{ args.placeholder }}"
+                type="text"
+                id=""
+                name="{{args.name}}"
+                value=""
+            />
+            <button
+                type="submit"
+                class="btn btn-warning px-4"
+                aria-label="{{ args.placeholder }}"
+            >
+                <img src="/images/icons/magnifying-glass.svg" alt="magnifying glass" />
+            </button>
+        </div>
+    </form>
+{% endmacro %}
+
+{% macro yukon_search_section(args) %}
+    <div class="row gx-lg-5 gy-3 yt-dataset-type-section" id="{{args.id}}">
+        <h2 class="mb-0 yt-section-heading">{{ args.title }}</h2>
+        <div class="col-lg-5">
+            <div class="mb-3">
+                {{ args.description }}
+            </div>
+            {{ search_input({
+        "placeholder": args.input_placeholder,
+        "action": args.action,
+        "name" : "q"
+                }) }}
+        </div>
+        <div class="col-lg-7 ps-lg-5">
+            <span class="d-block">{{ args.list_title }}</span>
+            <ul class="list-unstyled">
+                {% for item in args.list %}
+                    <li>
+                        <a href="{{ args.lang_prefix }}/{{ item.type }}/{{ item.name }}">{{ item.title | truncate(60) }}</a>
+                    </li>
+                {% endfor %}
+                <li class="mt-1">
+                    <a href="{{args.list_cta_href}}">{{args.list_cta_title }}</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro yukon_dataset_type_title(dataset_type) %}
+    {% set mapping = {
+        "pia-summaries": "Privacy impact assessment summary",
+        "information": "Open information",
+        "data": "Open data",
+        "access-requests": "Completed Access to Information requests"
+        } %}
+    {{ mapping.get(dataset_type, "Unknown Dataset Type") }}
+{% endmacro %}

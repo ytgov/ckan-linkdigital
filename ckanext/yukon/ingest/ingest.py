@@ -140,14 +140,7 @@ class YukonPackageRecord(PackageRecord):
 
         if pkg := (
             model.Session.query(model.Package)
-            .filter(
-                model.Package.extras.any(
-                    sa.and_(
-                        model.PackageExtra.key == "dkan_node_id",
-                        model.PackageExtra.value == str(dkan_node_id),
-                    )
-                )
-            )
+            .filter(model.Package.extras["dkan_node_id"].astext == str(dkan_node_id))
             .one_or_none()
         ):
             return pkg.name
@@ -181,14 +174,7 @@ class YukonResourceRecord(ResourceRecord):
         parent_dkan_node_id = data_dict["dkan_parent_dataset_node_id"]
         parent_pkg = (
             model.Session.query(model.Package)
-            .filter(
-                model.Package.extras.any(
-                    sa.and_(
-                        model.PackageExtra.key == "dkan_node_id",
-                        model.PackageExtra.value == str(parent_dkan_node_id),
-                    )
-                )
-            )
+            .filter(model.Package.extras["dkan_node_id"].astext == str(parent_dkan_node_id))
             .one_or_none()
         )
         if not parent_pkg:
