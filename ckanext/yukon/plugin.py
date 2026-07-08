@@ -9,12 +9,13 @@ from ckan.lib.plugins import DefaultTranslation
 from . import implementations
 
 
-@tk.blanket.auth_functions
 @tk.blanket.actions
-@tk.blanket.helpers
+@tk.blanket.auth_functions
 @tk.blanket.blueprints
 @tk.blanket.cli
 @tk.blanket.config_declarations
+@tk.blanket.helpers
+@tk.blanket.validators
 class YukonPlugin(
     implementations.Theme,
     implementations.PackageController,

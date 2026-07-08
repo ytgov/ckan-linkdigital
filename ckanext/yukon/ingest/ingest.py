@@ -14,6 +14,7 @@ from typing import Any
 
 import requests
 import sqlalchemy as sa
+from typing_extensions import override
 
 import ckan.plugins.toolkit as tk
 from ckan import model, types
@@ -47,6 +48,7 @@ RESOURCE_UNIQUE_FIELD = {
 
 
 class YukonCsvStrategy(CsvSimpleStrategy):
+    @override
     def chunks(
         self,
         source: shared.Storage,
@@ -57,20 +59,22 @@ class YukonCsvStrategy(CsvSimpleStrategy):
 
 @dataclasses.dataclass
 class YukonGroupRecord(shared.Record):
-    key_field = ""
-    action_prefix = ""
+    key_field: str = ""
+    action_prefix: str = ""
 
-    def transform(self, raw: Any):
+    @override
+    def transform(self, raw: Any) -> dict[str, Any]:
         title = raw.get(self.key_field)
         name = _title_to_name(title)
         return {"title": title, "name": name}
 
+    @override
     def ingest(self, context: types.Context) -> shared.IngestionResult:
         name = self.data["name"]
         topic = model.Group.get(name)
 
         action = self.action_prefix + ("update" if topic and self.options.get("update_existing") else "create")
-        if action == self.action_prefix + "update":
+        if topic and action == self.action_prefix + "update":
             self.data["id"] = topic.id
 
         result = tk.get_action(action)(context, self.data)
@@ -96,6 +100,7 @@ class YukonTopicRecord(YukonGroupRecord):
 
 @dataclasses.dataclass
 class YukonPackageRecord(PackageRecord):
+    @override
     def transform(self, raw: Any):
         data_dict = raw.copy()
         for key, value in DEFAULT_MAPPING.items():
@@ -116,13 +121,14 @@ class YukonPackageRecord(PackageRecord):
         )
         return data_dict
 
+    @override
     def ingest(self, context: types.Context) -> shared.IngestionResult:
         if self.options.get("only_dates"):
             self._insert_dates()
             return {"success": True}
 
         result = super().ingest(context)
-        redirect_map: RedirectMap = self.options.get("redirect_map")
+        redirect_map: RedirectMap | None = self.options.get("redirect_map")
         if redirect_map and (old_url := self.data.get("dkan_uri")):
             new_url = tk.h.url_for(result["result"]["type"] + ".read", id=result["result"]["name"])
             redirect_map.add(old_url, new_url)
@@ -159,18 +165,18 @@ class YukonPackageRecord(PackageRecord):
             if candidate_name not in taken:
                 return candidate_name
             counter = counter + 1
-        return None
 
     def _insert_dates(self):
-        pkg = model.Package.get(self.data["name"])
-        pkg.metadata_created = datetime.strptime(self.data["metadata_created"], "%Y-%m-%d %H:%M:%S")
-        pkg.metadata_modified = datetime.strptime(self.data["metadata_modified"], "%Y-%m-%d %H:%M:%S")
-        model.Session.commit()
+        if pkg := model.Package.get(self.data["name"]):
+            pkg.metadata_created = datetime.strptime(self.data["metadata_created"], "%Y-%m-%d %H:%M:%S")
+            pkg.metadata_modified = datetime.strptime(self.data["metadata_modified"], "%Y-%m-%d %H:%M:%S")
+            model.Session.commit()
 
 
 @dataclasses.dataclass
 class YukonResourceRecord(ResourceRecord):
-    def transform(self, raw: Any):
+    @override
+    def transform(self, raw: Any) -> dict[str, Any]:
         data_dict = raw.copy()
         parent_dkan_node_id = data_dict["dkan_parent_dataset_node_id"]
         parent_pkg = (
@@ -197,18 +203,18 @@ class YukonResourceRecord(ResourceRecord):
             }
         )
 
-        if self.options["update_resource_dates_only"]:
+        if self.options["update_resource_dates_only"]:  # pyright: ignore[reportGeneralTypeIssues]
             return data_dict
 
         if (data_dict.get("url_type") or "") == "upload":
             uploader = get_resource_uploader(data_dict)
-            Path(uploader.get_directory(data_dict["id"])).mkdir(parents=True, exist_ok=True)
+            Path(uploader.get_directory(data_dict["id"])).mkdir(parents=True, exist_ok=True)  # pyright: ignore[reportAttributeAccessIssue]
             while True:
                 try:
                     response = requests.get(
                         requests.utils.requote_uri(self.raw["url"]),
-                        headers=self.options["headers"],
-                        cookies=self.options["cookies"],
+                        headers=self.options["headers"],  # pyright: ignore[reportGeneralTypeIssues]
+                        cookies=self.options["cookies"],  # pyright: ignore[reportGeneralTypeIssues]
                         timeout=20,
                     )
                     response.raise_for_status()
@@ -247,19 +253,20 @@ class YukonResourceRecord(ResourceRecord):
                     )
                 time.sleep(RETRY_DELAY)
             with Path(uploader.get_path(data_dict["id"])).open("wb") as f:
-                f.write(response.content)
+                f.write(response.content)  # pyright: ignore[reportPossiblyUnboundVariable]
         return data_dict
 
+    @override
     def ingest(self, context: types.Context) -> shared.IngestionResult:
         if error := self.data.get("error"):
             raise tk.ValidationError(error)
 
-        if self.options["update_resource_dates_only"]:
+        if self.options["update_resource_dates_only"]:  # pyright: ignore[reportGeneralTypeIssues]
             self._insert_dates()
             return {"success": True}
 
         result = super().ingest(context)
-        redirect_map: RedirectMap = self.options.get("redirect_map")
+        redirect_map: RedirectMap | None = self.options.get("redirect_map")
         if redirect_map:
             if self.data.get("url_type") == "upload" and (old_file_url := self.data.get("url")):
                 new_file_url = result["result"]["url"]
@@ -278,25 +285,25 @@ class YukonResourceRecord(ResourceRecord):
         return result
 
     def _insert_dates(self):
-        res = model.Resource.get(self.data["id"])
-        res.metadata_modified = datetime.strptime(self.data["last_modified"], "%Y-%m-%d %H:%M:%S")
-        model.Session.commit()
+        if res := model.Resource.get(self.data["id"]):
+            res.metadata_modified = datetime.strptime(self.data["last_modified"], "%Y-%m-%d %H:%M:%S")
+            model.Session.commit()
 
 
 class YukonOrganizationStrategy(YukonCsvStrategy):
-    record_factory = YukonOrganizationRecord
+    record_factory: type[shared.Record] = YukonOrganizationRecord
 
 
 class YukonTopicStrategy(YukonCsvStrategy):
-    record_factory = YukonTopicRecord
+    record_factory: type[shared.Record] = YukonTopicRecord
 
 
 class YukonPackageStrategy(YukonCsvStrategy):
-    record_factory = YukonPackageRecord
+    record_factory: type[shared.Record] = YukonPackageRecord
 
 
 class YukonResourceStrategy(YukonCsvStrategy):
-    record_factory = YukonResourceRecord
+    record_factory: type[shared.Record] = YukonResourceRecord
 
 
 def _title_to_name(title: str) -> str:

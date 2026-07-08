@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from flask import Blueprint
 from flask.views import MethodView
 
@@ -54,7 +56,7 @@ class SelectDatasetTypeView(MethodView):
         return tk.redirect_to(f"{type_}.new")
 
     def get(self):
-        extra_vars = {
+        extra_vars: dict[str, Any] = {
             "form_snippet": "package/snippets/yukon_select_dataset_type_form.html",
             "pkg_dict": {},
             "form_vars": {

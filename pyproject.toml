@@ -13,7 +13,7 @@ classifiers = [
 ]
 keywords = [ "CKAN" ]
 requires-python = ">= 3.10"
-dependencies = [ "typing_extensions", "pyyaml",]
+dependencies = [ "typing_extensions", "pyyaml", "ckanext-toolbelt"]
 authors = [
     {name = "Link Digital", email = "info@linkdigital.com.au"},
 ]
@@ -157,6 +157,7 @@ reportMissingModuleSource = true
 reportMissingTypeStubs = false
 reportImportCycles = true
 reportUnusedImport = true
+reportUnusedParameter = false
 reportUnusedClass = true
 reportUnusedFunction = true
 reportUnusedVariable = true

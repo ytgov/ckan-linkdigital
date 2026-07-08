@@ -229,6 +229,7 @@ dataset_fields:
     form_snippet: null
     required: false
     group_name: usage_data
+    output_validators: yukon_package_stats(total_visits)
 
   - field_name: downloads
     label:
@@ -238,6 +239,7 @@ dataset_fields:
     form_snippet: null
     required: false
     group_name: usage_data
+    output_validators: yukon_package_stats(total_downloads)
 
   - field_name: visit_90_days
     label:
@@ -247,6 +249,7 @@ dataset_fields:
     form_snippet: null
     required: false
     group_name: usage_data
+    output_validators: yukon_package_stats(last_quarter_visits)
 
   - field_name: download_90_days
     label:
@@ -256,6 +259,7 @@ dataset_fields:
     form_snippet: null
     required: false
     group_name: usage_data
+    output_validators: yukon_package_stats(last_quarter_downloads)
 
   - field_name: dkan_node_id
     form_snippet: hidden.html

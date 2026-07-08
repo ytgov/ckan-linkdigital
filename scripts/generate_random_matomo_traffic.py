@@ -11,17 +11,14 @@ import click
 
 SUPPORTED_TYPES = ["data", "information", "access-requests", "pia-summaries"]
 TRACKING_USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
 )
 
 
 def _eligible_packages(dataset_refs=None, require_resources=True):
     from ckanext.yukon import matomo_sync
 
-    packages = matomo_sync._active_packages(
-        dataset_refs=list(dataset_refs) if dataset_refs else None
-    )
+    packages = matomo_sync._active_packages(dataset_refs=list(dataset_refs) if dataset_refs else None)
     if not require_resources:
         return packages
 
@@ -109,11 +106,7 @@ def _fetch_packages_from_api(ckan_url, api_token=None, dataset_refs=None):
 def _eligible_package_dicts(packages, site_url, require_resources=True):
     if not require_resources:
         return packages
-    return [
-        package
-        for package in packages
-        if _resource_urls_from_dict(site_url, package)
-    ]
+    return [package for package in packages if _resource_urls_from_dict(site_url, package)]
 
 
 def _random_visitor_id():
@@ -286,9 +279,7 @@ def main(
 ):
     """Generate random Matomo traffic across multiple Yukon datasets."""
     if not config_path and not ckan_url:
-        raise click.ClickException(
-            "Pass either --config or --ckan-url for standalone browser mode"
-        )
+        raise click.ClickException("Pass either --config or --ckan-url for standalone browser mode")
     if dataset_count < 1:
         raise click.ClickException("--dataset-count must be greater than 0")
     if min_visits < 0 or max_visits < 0 or min_downloads < 0 or max_downloads < 0:
@@ -296,9 +287,7 @@ def main(
     if min_visits > max_visits:
         raise click.ClickException("--min-visits cannot be greater than --max-visits")
     if min_downloads > max_downloads:
-        raise click.ClickException(
-            "--min-downloads cannot be greater than --max-downloads"
-        )
+        raise click.ClickException("--min-downloads cannot be greater than --max-downloads")
 
     rng = random.Random(seed)
     totals = {
@@ -325,11 +314,7 @@ def main(
             if not packages:
                 raise click.ClickException("No eligible datasets found")
 
-            selected = (
-                rng.sample(packages, min(dataset_count, len(packages)))
-                if len(packages) > 1
-                else packages
-            )
+            selected = rng.sample(packages, min(dataset_count, len(packages))) if len(packages) > 1 else packages
 
             for package in selected:
                 visits = rng.randint(min_visits, max_visits)
@@ -376,11 +361,7 @@ def main(
         if not packages:
             raise click.ClickException("No eligible datasets found")
 
-        selected = (
-            rng.sample(packages, min(dataset_count, len(packages)))
-            if len(packages) > 1
-            else packages
-        )
+        selected = rng.sample(packages, min(dataset_count, len(packages))) if len(packages) > 1 else packages
 
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=headless)
@@ -420,9 +401,7 @@ def main(
 
     click.echo(
         "random-traffic: datasets={datasets} visits_sent={visits_sent} "
-        "downloads_sent={downloads_sent} dry_run={dry_run}".format(
-            dry_run=dry_run, **totals
-        )
+        "downloads_sent={downloads_sent} dry_run={dry_run}".format(dry_run=dry_run, **totals)
     )
 
 

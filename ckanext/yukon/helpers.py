@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import fnmatch
 import logging
-from typing import Any
+from typing import Any, cast
 
 import ckan.plugins.toolkit as tk
 from ckan import types
@@ -71,12 +71,13 @@ def yukon_get_featured_datasets():
 
 def yukon_group_is_empty(data_dict: types.DataDict, group_name: str, dataset_type: str):
     """Check if the metadata group(set of dataset fields) is empty."""
-    dataset_fields: list[dict[str, Any]] = scheming_get_dataset_schema(dataset_type)["dataset_fields"]
+    schema: Any = cast("dict[str, dict[str, Any]]", scheming_get_dataset_schema(dataset_type))
+    dataset_fields: list[dict[str, Any]] = schema["dataset_fields"]
     for field in dataset_fields:
         if field.get("group_name") != group_name:
             continue
 
-        name = field.get("field_name")
+        name = cast(str, field.get("field_name"))
 
         if name == "tag_string":
             name = "tags"

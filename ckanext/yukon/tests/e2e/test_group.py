@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
+
 from ckan import types
 
 

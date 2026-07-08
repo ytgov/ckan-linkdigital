@@ -20,7 +20,7 @@ groups:
 
           - key: ckanext.yukon.limits.featured_datasets
             editable: true
-            default: 3
+            default: 1
             type: int
             description: |
               Number of featured datasets to show on the home page.

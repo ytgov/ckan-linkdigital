@@ -3,14 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, backref, relationship
 from sqlalchemy.orm.relationships import RelationshipProperty
 
 import ckan.plugins.toolkit as tk
 from ckan import model
 from ckan.lib.dictization import table_dictize
-
-foreign: Any
 
 
 class PackageStats(tk.BaseModel):  # pyright: ignore[reportUntypedBaseClass]
@@ -29,14 +27,14 @@ class PackageStats(tk.BaseModel):  # pyright: ignore[reportUntypedBaseClass]
         ```
     """
 
-    __table__ = sa.Table(
+    __table__: sa.Table = sa.Table(
         "yukon_package_stats",
         tk.BaseModel.metadata,
-        sa.Column("id", sa.UnicodeText, sa.ForeignKey(model.Package.id), primary_key=True),
-        sa.Column("total_visits", sa.Integer, nullable=False, default=0),
-        sa.Column("total_downloads", sa.Integer, nullable=False, default=0),
-        sa.Column("last_quarter_visits", sa.Integer, nullable=False, default=0),
-        sa.Column("last_quarter_downloads", sa.Integer, nullable=False, default=0),
+        sa.Column("id", sa.UnicodeText, sa.ForeignKey(model.Package.id, ondelete="CASCADE"), primary_key=True),
+        sa.Column("total_visits", sa.Integer, nullable=False, default=0, server_default="0"),
+        sa.Column("total_downloads", sa.Integer, nullable=False, default=0, server_default="0"),
+        sa.Column("last_quarter_visits", sa.Integer, nullable=False, default=0, server_default="0"),
+        sa.Column("last_quarter_downloads", sa.Integer, nullable=False, default=0, server_default="0"),
     )
 
     id: Mapped[str]
@@ -46,9 +44,7 @@ class PackageStats(tk.BaseModel):  # pyright: ignore[reportUntypedBaseClass]
     last_quarter_downloads: Mapped[int]
 
     package: RelationshipProperty[model.Package] = relationship(
-        model.Package,
-        uselist=False,
-        lazy="joined",
+        model.Package, lazy="joined", backref=backref("yukon_stats", uselist=False)
     )
 
     def dictize(self) -> dict[str, Any]:

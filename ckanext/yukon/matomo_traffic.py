@@ -4,22 +4,26 @@ This module is intentionally separate from matomo_sync.py (which only reads
 stats from Matomo and writes them to CKAN).  Nothing here touches the CKAN DB.
 """
 
+from __future__ import annotations
+
 import calendar
 import datetime
 import http.client
 import json
 import logging
 import random
+from typing import Any
 from urllib.parse import urlencode, urlparse
 
-from ckan.plugins import toolkit as tk
 from ckan import model
+from ckan.plugins import toolkit as tk
+
 from .matomo_sync import (
     MatomoClient,
-    _active_packages,
-    _dataset_download_urls,
-    _dataset_urls_multilang,
-    _shift_years,
+    _active_packages,  # pyright: ignore[reportPrivateUsage]
+    _dataset_download_urls,  # pyright: ignore[reportPrivateUsage]
+    _dataset_urls_multilang,  # pyright: ignore[reportPrivateUsage]
+    _shift_years,  # pyright: ignore[reportPrivateUsage]
 )
 
 log = logging.getLogger(__name__)
@@ -43,17 +47,21 @@ class MatomoTrackingClient(MatomoClient):
     def __init__(self):
         super().__init__()
         parsed = urlparse(self.base_url)
-        self._host = parsed.hostname
-        self._port = parsed.port or (443 if parsed.scheme == "https" else 80)
-        self._scheme = parsed.scheme
-        self._tracking_path = parsed.path.rstrip("/") + "/matomo.php"
+        host = parsed.hostname
+        if not host:
+            raise ValueError(parsed)
+
+        self._host: str = host
+        self._port: int = parsed.port or (443 if parsed.scheme == "https" else 80)
+        self._scheme: str = parsed.scheme
+        self._tracking_path: str = parsed.path.rstrip("/") + "/matomo.php"
 
     def _make_conn(self):
         if self._scheme == "https":
             return http.client.HTTPSConnection(self._host, self._port, timeout=self.timeout)
         return http.client.HTTPConnection(self._host, self._port, timeout=self.timeout)
 
-    def _track_bulk(self, requests):
+    def _track_bulk(self, requests: list[dict[str, Any]]):
         """Send a list of tracking param-dicts in one POST request."""
         body = json.dumps(
             {
@@ -90,8 +98,8 @@ class MatomoTrackingClient(MatomoClient):
         finally:
             conn.close()
 
-    def _build_pageview(self, page_url, visitor_id, at=None):
-        p = {
+    def _build_pageview(self, page_url: str, visitor_id: str, at: datetime.date | None = None):
+        p: dict[str, Any] = {
             "url": page_url,
             "action_name": "Dataset Page View",
             "_id": visitor_id,
@@ -100,8 +108,8 @@ class MatomoTrackingClient(MatomoClient):
             p["cdt"] = int(calendar.timegm(at.timetuple()))
         return p
 
-    def _build_download(self, download_url, visitor_id, at=None):
-        p = {"download": download_url, "_id": visitor_id}
+    def _build_download(self, download_url: str, visitor_id: str, at: datetime.date | None = None):
+        p: dict[str, Any] = {"download": download_url, "_id": visitor_id}
         if at is not None:
             p["cdt"] = int(calendar.timegm(at.timetuple()))
         return p
@@ -111,7 +119,7 @@ def _random_visitor_id():
     return "".join(random.choice("0123456789abcdef") for _ in range(16))
 
 
-def _random_datetime_in_range(start_date, end_date):
+def _random_datetime_in_range(start_date: datetime.date, end_date: datetime.date):
     """Return a random datetime between start_date and end_date (inclusive)."""
     delta_days = (end_date - start_date).days
     offset_days = random.randint(0, max(0, delta_days))
@@ -123,13 +131,13 @@ def _random_datetime_in_range(start_date, end_date):
 
 
 def generate_test_traffic(
-    dataset_ref,
-    visits_3y=25,
-    visits_90d=10,
-    downloads_3y=10,
-    downloads_90d=5,
-    dry_run=False,
-):
+    dataset_ref: str,
+    visits_3y: int = 25,
+    visits_90d: int = 10,
+    downloads_3y: int = 10,
+    downloads_90d: int = 5,
+    dry_run: bool = False,
+) -> dict[str, Any]:
     """Send synthetic pageviews and download events to Matomo.
 
     All events for a dataset are sent in a single bulk POST so the number
@@ -183,25 +191,25 @@ def generate_test_traffic(
     for idx in range(visits_3y):
         at = _random_datetime_in_range(three_year_start, pre_90_end)
         page_url = page_urls[idx % len(page_urls)]
-        requests.append(client._build_pageview(page_url, _random_visitor_id(), at=at))
+        requests.append(client._build_pageview(page_url, _random_visitor_id(), at=at))  # pyright: ignore[reportPrivateUsage]
 
     for idx in range(visits_90d):
         at = _random_datetime_in_range(last_90_start, end_date)
         page_url = page_urls[idx % len(page_urls)]
-        requests.append(client._build_pageview(page_url, _random_visitor_id(), at=at))
+        requests.append(client._build_pageview(page_url, _random_visitor_id(), at=at))  # pyright: ignore[reportPrivateUsage]
 
     for idx in range(downloads_3y):
         at = _random_datetime_in_range(three_year_start, pre_90_end)
         download_url = download_urls[idx % len(download_urls)]
-        requests.append(client._build_download(download_url, _random_visitor_id(), at=at))
+        requests.append(client._build_download(download_url, _random_visitor_id(), at=at))  # pyright: ignore[reportPrivateUsage]
 
     for idx in range(downloads_90d):
         at = _random_datetime_in_range(last_90_start, end_date)
         download_url = download_urls[idx % len(download_urls)]
-        requests.append(client._build_download(download_url, _random_visitor_id(), at=at))
+        requests.append(client._build_download(download_url, _random_visitor_id(), at=at))  # pyright: ignore[reportPrivateUsage]
 
     if requests:
-        client._track_bulk(requests)
+        client._track_bulk(requests)  # pyright: ignore[reportPrivateUsage]
 
     return {
         "dataset": package.name,
@@ -219,15 +227,15 @@ def generate_test_traffic(
 
 
 def generate_bulk_traffic(
-    visits_3y=25,
-    visits_90d=10,
-    downloads_3y=10,
-    downloads_90d=5,
-    dataset_refs=None,
-    limit=None,
-    offset=None,
-    dry_run=False,
-):
+    visits_3y: int = 25,
+    visits_90d: int = 10,
+    downloads_3y: int = 10,
+    downloads_90d: int = 5,
+    dataset_refs: list[str] | None = None,
+    limit: int | None = None,
+    offset: int | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
     """Generate fake traffic for every active dataset of every supported type.
 
     ``dataset_refs`` can be a list of names/ids to restrict which datasets are
@@ -248,7 +256,7 @@ def generate_bulk_traffic(
     succeeded = 0
     failed = 0
     skipped = 0
-    totals = {
+    totals: dict[str, Any] = {
         "visits_3y_sent": 0,
         "visits_90d_sent": 0,
         "downloads_3y_sent": 0,
