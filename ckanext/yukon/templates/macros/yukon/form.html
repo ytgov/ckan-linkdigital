@@ -1,0 +1,212 @@
+{%- import "macros/form.html" as _form -%}
+
+{%- macro extra_field(content, index=0, data={}, errors={}, name_template='extras__{index}__') -%}
+    {%- do kwargs -%}
+    {%- set prefix = name_template.format(index=index) -%}
+    {%- set params =  {
+          "names": (prefix ~ 'key', prefix ~ 'value', prefix ~ 'deleted'),
+          "id": 'field-extras-%d' % (index+1),
+          "label": _('Custom Field'),
+          "values": (data.key, data.value, data.deleted),
+          "error": errors[prefix ~ 'key'] or errors[prefix ~ 'value']
+        } -%}
+    {{ _form.custom(**params) }}
+{%- endmacro %}
+
+{%- macro extra_fields_collection(extras=[], errors={}, limit=3) -%}
+    {{ h.snippet('snippets/custom_form_fields.html', extras=extras, errors=errors, limit=limit, **kwargs) }}
+{%- endmacro %}
+
+{%- macro field_errors(errors) -%}
+    {%- if errors -%}
+        <span {{ ui.util.attrs(kwargs, {"class": "error-block"}) }}>{{ errors | join(', ') }}</span>
+    {%- endif %}
+{%- endmacro %}
+
+{%- macro file_input(content, accept, capture, multiple) -%}
+    {%- if multiple -%}
+        {%- do kwargs.setdefault("attrs", {}).setdefault("multiple", true) -%}
+    {%- endif %}
+    {%- if accept -%}
+        {%- do kwargs.setdefault("attrs", {}).setdefault("accept", accept) -%}
+    {%- endif %}
+    {%- if capture -%}
+        {%- do kwargs.setdefault("attrs", {}).setdefault("capture", capture) -%}
+    {%- endif %}
+    {{ ui.input(content, type="file", **kwargs) }}
+{%- endmacro %}
+
+{%- macro form_errors(errors) -%}
+    {%- do kwargs -%}
+    {{ _form.errors(errors) if errors }}
+{%- endmacro %}
+
+{%- macro hidden_input(name, value) -%}
+    {%- do kwargs -%}
+    {{ _form.hidden(name, value) }}
+{%- endmacro %}
+
+{%- macro input(content, name, id, label, value, required, placeholder, type, icon, errors=[]) -%}
+    {%- do ui.util.augment_attrs(kwargs, {"class": "form-control"}) -%}
+    {%- set params = {
+              "name": name,
+              "id": id,
+              "label": label,
+              "value": value,
+              "placeholder": placeholder,
+              "type": type,
+              "error": errors,
+              "is_required": required,
+              "attrs": kwargs.attrs,
+        } -%}
+    {%- set func = _form.input -%}
+    {%- if kwargs.prefix -%}
+        {%- set func = _form.prepend -%}
+        {%- do params.update({"prepend": kwargs.prefix}) -%}
+    {%- endif %}
+    {%- call func(**params) -%}{{ content }}{%- endcall %}
+{%- endmacro %}
+
+{%- macro form_annotation() -%}
+    {%- do kwargs -%}
+    {{ _form.required_message() }}
+{%- endmacro %}
+
+{%- macro field_info(content, inline=false, classes=[]) -%}
+    {%- do kwargs -%}
+    {{ _form.info(content, inline, classes) }}
+{%- endmacro %}
+
+{%- macro checkbox(content, name, id, checked, label, required, placeholder, value="", errors=[]) -%}
+    {%- do ui.util.augment_attrs(kwargs, {"class": "form-checkbox"}) -%}
+    {%- set params = {
+              "name": name,
+              "id": id,
+              "label": label,
+              "value": value,
+              "checked": checked,
+              "placeholder": placeholder,
+              "error": errors,
+              "is_required": required,
+              "attrs": kwargs.attrs,
+        } -%}
+    {%- call _form.checkbox(**params) -%}{{ content }}{%- endcall %}
+{%- endmacro %}
+
+{%- macro markdown(content, name, id, label, value, placeholder, required, errors=[], group_class="form-group control-full") -%}
+    {%- do kwargs.setdefault("attrs", {}).setdefault("class", "form-control") -%}
+    {%- set params = {
+              "name": name,
+              "id": id,
+              "label": label,
+              "value": value,
+              "placeholder": placeholder,
+              "error": errors,
+              "is_required": required,
+              "attrs": kwargs.attrs,
+        } -%}
+    {%- call _form.markdown(**params) -%}{{ content }}{%- endcall %}
+{%- endmacro %}
+
+{%- macro radio(content, checked, value="on") -%}
+    {%- do ui.util.augment_attrs(kwargs, {"class": "form-checkbox"}) -%}
+    {{ ui.input(content, checked=checked, value=value or "on", type="radio", **kwargs) }}
+{%- endmacro %}
+
+{%- macro range_input(content, min_value, max_value, step) -%}
+    {%- set defaults = {"class": "form-checkbox"} -%}
+    {%- if min_value is defined -%}
+        {%- do defaults.update({"min": min_value}) -%}
+    {%- endif %}
+    {%- if max_value is defined -%}
+        {%- do defaults.update({"max": max_value}) -%}
+    {%- endif %}
+    {%- if step is defined -%}
+        {%- do defaults.update({"step": step}) -%}
+    {%- endif %}
+
+    {%- do ui.util.augment_attrs(kwargs, defaults) -%}
+    {{ ui.input(content, type="range", **kwargs) }}
+{%- endmacro %}
+
+{%- macro select(content, name, id, label, options, selected, multiple) -%}
+    {%- set defaults = {"class": "form-control"} -%}
+    {%- if multiple -%}
+        {%- do defaults.update({"multiple": true}) -%}
+    {%- endif %}
+    {%- do ui.util.augment_attrs(kwargs, defaults) -%}
+    {%- set params = {
+              "name": name,
+              "id": id,
+              "label": label,
+              "options": options,
+              "selected": selected,
+              "error": errors,
+              "is_required": required,
+              "attrs": kwargs.attrs,
+        } -%}
+    {%- call _form.select(**params) -%}{{ content }}{%- endcall %}
+{%- endmacro %}
+
+{%- macro select_box(content, nested_content, name, id, label, multiple, required, autocomplete, errors=[], group_class="form-group") -%}
+    {%- set field_id = id or (name and "field-" ~ name) or (label and ui.util.id()) or "" -%}
+    <div class="{{ group_class }}">
+        {%- if label -%}
+            <label class="form-label" for="{{ field_id }}">
+                {%- if required -%}<span class="control-required">*</span>{%- endif %}
+                {{- label -}}
+            </label>
+        {%- endif %}
+        <select
+            {{ ui.util.attrs(kwargs, {"class": "form-select" ~ (' is-invalid' if errors else "")}) }}
+            {%- if name %} name="{{ name }}"{%- endif %}
+            {%- if field_id %} id="{{ field_id }}"{%- endif %}
+            {%- if required %} required{%- endif %}
+            {%- if multiple %} multiple{%- endif %}
+            {%- if errors %} aria-invalid="true"{% endif %}
+        >
+            {{ content }}
+        </select>
+        {{ nested_content }}
+        {{ ui.field_errors(errors) if errors }}
+    </div>
+{%- endmacro %}
+
+{%- macro textarea(content, name, id, label, value, placeholder, required, errors=[], group_class="form-group control-full") -%}
+    {%- do kwargs.setdefault("attrs", {}).setdefault("class", "form-control") -%}
+    {%- set params = {
+              "name": name,
+              "id": id,
+              "label": label,
+              "value": value,
+              "placeholder": placeholder,
+              "error": errors,
+              "is_required": required,
+              "attrs": kwargs.attrs,
+        } -%}
+    {%- call _form.textarea(**params) -%}{{ content }}{%- endcall %}
+{%- endmacro %}
+
+{%- macro autocomplete(content, source, options, allow_multiple, allow_new, selected, min_chars, debounce, joined, separator, id_key, label_key) -%}
+
+    {%- set defaults = {"data-module": "autocomplete", "data-module-createtags": "true" if allow_new else "false"} -%}
+    {% if source %}{% do defaults.update({"data-module-source": source}) %}{% endif %}
+    {% if debounce %}{% do defaults.update({"data-module-interval": debounce}) %}{% endif %}
+    {% if allow_multiple %}{% do defaults.update({"data-module-tags": allow_multiple}) %}{% endif %}
+    {% if id_key %}{% do defaults.update({"data-module-key": id_key}) %}{% endif %}
+    {% if label_key %}{% do defaults.update({"data-module-label": label_key}) %}{% endif %}
+    {% if separator %}{% do defaults.update({"data-module-tokensep": separator}) %}{% endif %}
+    {% if min_chars %}{% do defaults.update({"data-module-minimum-input-length": min_chars}) %}{% endif %}
+
+    {%- do ui.util.augment_attrs(kwargs, defaults) -%}
+
+    {%- if options or not joined -%}
+        {#  when options are specified, we have to use select input and cannot satisfy joined=true #}
+        {%- do kwargs.update({"multiple": allow_multiple}) -%}
+        {{ ui.select(content, options=options or [], selected=selected, **kwargs) }}
+    {%- else -%}
+        {# Here joined=false cannot be satisfied  #}
+        {%- if selected -%}{%- do kwargs.update({"value": selected}) -%}{%- endif %}
+        {{ ui.input(content, **kwargs) }}
+    {%- endif %}
+{%- endmacro %}

@@ -1,5 +1,5 @@
-from .something import Something
+from .package_stats import PackageStats
 
 __all__ = [
-    "Something",
+    "PackageStats",
 ]

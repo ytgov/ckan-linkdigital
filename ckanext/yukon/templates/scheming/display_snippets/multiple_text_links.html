@@ -5,12 +5,12 @@
     {%- for value in values -%}
       <li><a href="/{{ dataset_type }}/?groups={{ value.name }}">{{ value.display_name }}</a></li>
     {%- endfor -%}
-  </ul>    
+  </ul>
 {% else %}
   {%- set values = data["tags"] -%}
   <ul class="p-0" style="list-style-type: none;">
     {%- for value in values -%}
       <li><a href="/{{ dataset_type }}/?tags={{ value.name }}">{{ value.display_name }}</a></li>
     {%- endfor -%}
-  </ul>    
+  </ul>
 {% endif %}

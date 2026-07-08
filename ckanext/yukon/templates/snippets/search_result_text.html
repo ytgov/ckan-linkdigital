@@ -33,9 +33,9 @@ Example:
   {% set text_query_singular = '{number} results for "{query}"' %}
   {% set text_query_plural = '{number} results for "{query}"' %}
   {% set text_query_none_plural = 'No results for "{query}"' %}
-  {% set text_no_query_singular = '{number} results' %}        
+  {% set text_no_query_singular = '{number} results' %}
   {% set text_no_query_plural = '{number} results' %}
-  {% set text_no_query_none_plural = 'No results' %}      
+  {% set text_no_query_none_plural = 'No results' %}
 
   {% set text_query = ungettext(text_query_singular, text_query_plural, count) %}
   {% set text_query_none = _(text_query_none_plural) %}

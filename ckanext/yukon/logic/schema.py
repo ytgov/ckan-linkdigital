@@ -1,32 +1,29 @@
 from __future__ import annotations
 
-# from ckan import types
-# from ckan.logic.schema import validator_args
+import ckan.plugins.toolkit as tk
+from ckan import types
 
 
-# @validator_args
-# def get_sum(
-#     convert_int: types.Validator,
-#     not_empty: types.Validator,
-# ) -> types.Schema:
-#     """Schema for yukon_get_sum action."""
-#     return {
-#         "left": [not_empty, convert_int],
-#         "right": [not_empty, convert_int],
-#     }
+@tk.validator_args
+def package_set_featured(
+    list_of_strings: types.Validator, default: types.ValidatorFactory, json_list_or_string: types.Validator
+) -> types.Schema:
+    return {
+        "dataset_ids": [default("[]"), json_list_or_string, list_of_strings],
+    }
 
 
-# @validator_args
-# def something_create(
-#     not_empty: types.Validator,
-#     unicode_safe: types.Validator,
-#     ignore_empty: types.Validator,
-#     convert_to_json_if_string: types.Validator,
-#     dict_only: types.Validator,
-# ) -> types.Schema:
-#     """Schema for yukon_something_create action."""
-#     return {
-#         "hello": [not_empty, unicode_safe],
-#         "world": [not_empty, unicode_safe],
-#         "plugin_data": [ignore_empty, convert_to_json_if_string, dict_only],
-#     }
+@tk.validator_args
+def matomo_sync_usage_data(
+    list_of_strings: types.Validator,
+    default: types.ValidatorFactory,
+    json_list_or_string: types.Validator,
+    boolean_validator: types.Validator,
+    int_validator: types.Validator,
+) -> types.Schema:
+    return {
+        "dry_run": [boolean_validator],
+        "dataset_refs": [default("[]"), json_list_or_string, list_of_strings],
+        "limit": [default(25), int_validator],
+        "offset": [default(0), int_validator],
+    }

@@ -7,6 +7,7 @@ import tempfile
 import zipfile
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Any
 
 import click
 from werkzeug.datastructures import FileStorage
@@ -80,9 +81,7 @@ class IngestFailures(click.ClickException):
         super().__init__(msg)
 
 
-def parse_header(
-    ctx: click.Context, _param: click.Option, value: tuple[str, ...]
-) -> dict[str, str]:
+def parse_header(ctx: click.Context, _param: click.Option, value: tuple[str, ...]) -> dict[str, str]:
     """Turn multiple ``--header "Key: Value"`` into a dict."""
     headers: dict[str, str] = {}
     for item in value:
@@ -95,9 +94,7 @@ def parse_header(
     return headers
 
 
-def parse_cookie(
-    ctx: click.Context, _param: click.Option, value: tuple[str, ...]
-) -> dict[str, str]:
+def parse_cookie(ctx: click.Context, _param: click.Option, value: tuple[str, ...]) -> dict[str, str]:
     """Turn multiple ``--cookie k=v`` into a dict."""
     cookies: dict[str, str] = {}
     for item in value:
@@ -208,7 +205,7 @@ def migrate_data(  # noqa PLR0913
                     content_type=mimetypes.guess_type(member)[0] or "text/csv",
                 )
 
-            options = {
+            options: dict[str, Any] = {
                 "record_options": {
                     "update_existing": True,
                     "cookies": cookie,

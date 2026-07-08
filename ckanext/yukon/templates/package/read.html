@@ -4,7 +4,7 @@
 
 {% endblock %}
 
-{% set dataset_type_title=h.dataset_type_title(dataset_type) %}
+{% set dataset_type_title=h.yukon_dataset_type_title(dataset_type) %}
 {% set can_edit = pkg and h.check_access('package_update', {'id':pkg.id }) %}
 
 {% block breadcrumb_content %}
@@ -89,7 +89,7 @@
                             {% endif %}
                             <a href="{{h.url_for('activity.package_activity', id=pkg.name)}}" class="btn btn-outline-primary">{{_("View changes")}}</a>
                             <button class="btn btn-outline-primary btn-api-access"  data-toggle="modal" data-target="#api-access-modal">{{_("Access via API")}}</button>
-                            {% set uploaded_count = h.downloadall__count_uploaded_resources(pkg) %}
+                            {% set uploaded_count = h.yukon_count_uploaded_resources(pkg) %}
                             {% if zip_res and uploaded_count > 1 %}
                                 <a class="btn btn-primary resource-url-analytics resource-type-{{ zip_res.resource_type }}" href="{{ zip_res.url }}">
                                     <i class="fa fa-arrow-circle-o-down"></i> {{ _('Download all') }}

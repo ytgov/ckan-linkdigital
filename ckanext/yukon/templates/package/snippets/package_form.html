@@ -46,9 +46,9 @@ then itself be extended to add/remove blocks of functionality. #}
           {% endif %}
         {% endblock %}
         {% block save_button %}
-          <button class="btn btn-primary" type="submit" name="save">
-            {%- if form_style == 'edit' -%}
-              {{ _('Update') }} {{ h.dataset_type_menu_title(pkg_dict.type) }}
+            <button class="btn btn-primary" type="submit" name="save">
+                {%- if form_style == 'edit' -%}
+                    {{ _('Update') }} {{ h.yukon_dataset_type_menu_title(pkg_dict.type) }}
             {%- else -%}
               {{ _('Next: Add Data') }}
             {%- endif -%}

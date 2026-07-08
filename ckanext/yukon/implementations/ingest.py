@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import ckan.plugins as p
+from typing_extensions import override
 
 from ckanext.ingest.interfaces import IIngest
 from ckanext.ingest.shared import ExtractionStrategy
@@ -8,9 +8,8 @@ from ckanext.ingest.shared import ExtractionStrategy
 from ckanext.yukon import ingest
 
 
-class Ingest(p.SingletonPlugin):
-    p.implements(IIngest)
-
+class Ingest(IIngest):
+    @override
     def get_ingest_strategies(self) -> dict[str, type[ExtractionStrategy]]:
         return {
             "yukon:organization": ingest.YukonOrganizationStrategy,

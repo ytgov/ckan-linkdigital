@@ -1,32 +1,3 @@
-## Example:
-# make prepare; make full-upgrade
-#
-## or
-# make prepare; make sync install
-#
-## `make prepare` installs/updates code for all other make-rules. It's
-## recommended to execute it periodicatlly, to pull the lates version of CDM.
-#
-## `make full-upgrade` synchronizes and installs CKAN, dependencies and current
-## extension.
-#
-## `make sync install` synchronizes and installs only dependencies. CKAN and
-## current extension are ignored.
-#
-## Add `develop=1` to install dev-requirements.txt alongside with the normal
-## requirements.
-#
-## Any extension can be synchronized/installed individually:
-# make sync-EXT install-EXT
-#
-## If `remote-EXT` definition is present, extension is pulled from the
-## specified source. If you are running `make sync-EXT install-EXT` and there
-## is no `remote-EXT` line, CDM makes an attempt to pull the extension from
-## master branch of `https://github.com/ckan/ckanext-EXT`. Most likely, such
-## extension does not exist. But git will think that you are pulling from
-## private repository and may ask your credentials or just say that you don't
-## have permissions to read from this repo.
-
 ###############################################################################
 #                             requirements: start                             #
 ###############################################################################
@@ -35,11 +6,6 @@
 # if you want to use CKAN fork or specific commit, use this full specification
 ckan_tag = ckan-2.11.5
 
-# items from this list are installed by `make full-upgrade` and `make sync
-# install`. If you specify remote, but did not added extension to this list, it
-# won't be installed. If you add SOMETHING to this list, but did not specify
-# remote, SOMETHING is pulled from `https://github.com/ckan/ckanext-SOMETHING
-# branch master`
 ext_list = \
 	scheming \
 	envvars \
@@ -47,29 +13,16 @@ ext_list = \
 	xloader \
 	ingest \
 	downloadall \
-	harvest
+	harvest theming
 
-# information about extension source. Format is `ALTERNATIVE-NAME = URL TYPE
-# REF`, where
-#
-# * ALTERNATIVE: `remote` by default, but can be any string
-#
-# * NAME: name of extension. Must be exactly the same as value from `ext_list`
-#
-# * URL: repo URL. GitHub, BitBucket, GitLab or even SSH URL
-#
-# * TYPE: type of reference specified by the next part. One of: branch, commit, tag
-#
-# * REF: commit hash, branch name, tag name, depending on TYPE value. Prefer tags
 remote-scheming = https://github.com/ckan/ckanext-scheming.git tag release-3.1.0
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
 remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.10
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 remote-harvest = https://github.com/ckan/ckanext-harvest.git tag v1.6.1
 remote-downloadall = https://github.com/SDM-TIB/ckanext-downloadall.git commit 4e0965e # 2026-04-09, +1 commit after v0.3.0
+remote-theming = https://github.com/dataShades/ckanext-theming commit 3651549 # 2026-06-06
 
-# extras installed with the extension. Produce `pip install
-# 'ckanext-googleanalytics[requirements]'`-like instructions.
 package_extras-remote-googleanalytics = requirements
 package_extras-remote-files = opendal,libcloud
 package_extras-remote-resource-indexer = pdf
@@ -88,41 +41,17 @@ _version = master
 prepare:  ## download CDM rules
 	curl -O https://raw.githubusercontent.com/DataShades/ckan-deps-installer/$(_version)/deps.mk
 
-vendor-dir = ckanext/yukon/assets/vendor
 
-vendor:  ## Copy vendor libraries from node_modules/ to assets directory
-	# cp node_modules/tom-select/dist/js/tom-select.{base,complete}.min.js $(vendor-dir)
-	# cp node_modules/tom-select/dist/css/tom-select{,.bootstrap5}.css $(vendor-dir)
-	# cp node_modules/sweetalert2/dist/sweetalert2.all.min.js $(vendor-dir)/sweetalert2.all.js
-	# cp node_modules/sortablejs/Sortable.min.js $(vendor-dir)/Sortable.js
-	# cp node_modules/htmx.org/dist/htmx.min.js $(vendor-dir)/htmx.js
-	# cp node_modules/hyperscript.org/dist/_hyperscript.min.js $(vendor-dir)/hyperscript.js
-	# cp node_modules/izimodal/css/iziModal.css $(vendor-dir)
-	# cp node_modules/izimodal/js/iziModal.js $(vendor-dir)
-	# cp node_modules/izitoast/dist/css/iziToast.css $(vendor-dir)
-	# cp node_modules/izitoast/dist/js/iziToast.js $(vendor-dir)
-	# cp node_modules/slick-carousel/slick/slick.{js,css} $(vendor-dir)
-	# cp node_modules/slick-carousel/slick/slick-theme.css $(vendor-dir)
-	# cp node_modules/slick-carousel/slick/ajax-loader.gif ckanext/yukon/public
-	# cp node_modules/slick-carousel/slick/fonts ckanext/yukon/public/slick-fonts -r
-	# cp node_modules/daterangepicker/daterangepicker.{js,css} ckanext/yukon/assets/vendor
-	# cp node_modules/daterangepicker/moment.min.js ckanext/yukon/assets/vendor
-	# cp node_modules/overlayscrollbars/styles/overlayscrollbars.css ckanext/yukon/assets/vendor
-	# cp node_modules/overlayscrollbars/browser/overlayscrollbars.browser.es6.js ckanext/yukon/assets/vendor/overlayscrollbars.js
-	echo "..."
-
-typecheck:  ## Run typechecker
-	npx pyright --pythonpath="$$(which python)"
-
-
-changelog:  ## compile changelog
-	git changelog -c conventional -o CHANGELOG.md $(if $(bump),-B $(bump))
+test-config = test_config/test.ini
 
 test-server:  ## start server for frontend testing
 ifeq ($(dirty-server),)
-	yes | ckan -c test.ini db clean
-	ckan -c test.ini db upgrade
-	yes | ckan -ctest.ini sysadmin add admin password=password123 email=admin@test.net
-else
-	ckan -c test.ini run -t
+	yes | ckan -c $(test-config) db clean
+	ckan -c $(test-config) db upgrade
+	yes | ckan -c$(test-config) sysadmin add admin password=password123 email=admin@test.net
 endif
+	ckan -c $(test-config) run -t
+
+
+serve-docs: ## serve documentation via HTTP
+	zensical serve

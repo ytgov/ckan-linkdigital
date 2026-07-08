@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
+from typing_extensions import override
+
 
 class RedirectMap:
     """Accumulates old -> new URL mappings and can emit a Nginx map file."""
@@ -21,6 +23,7 @@ class RedirectMap:
             for src, dst in self._pairs:
                 fp.write(f"{src} {dst};\n")
 
+    @override
     def __repr__(self) -> str:
         return f"RedirectMap of {len(self._pairs)} pairs."
 
