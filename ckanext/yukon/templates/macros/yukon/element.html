@@ -11,10 +11,12 @@
     {%- do kwargs.setdefault("attrs", {}).setdefault("class", class) -%}
 
     {%- if href -%}
-        {{ ui.link(prefix ~ content, href=href, **kwargs) }}
+        {%- call ui.util.call(ui.link, href=href, **kwargs) -%}
+            {{- prefix }} {{ content -}}
+        {%- endcall %}
     {%- else -%}
         <button {{ ui.util.attrs(kwargs) }} type="{{ type }}">
-            {{- prefix ~ content -}}
+            {{- prefix }} {{ content -}}
         </button>
     {%- endif %}
 {%- endmacro %}
