@@ -210,3 +210,8 @@
         {{ ui.input(content, **kwargs) }}
     {%- endif %}
 {%- endmacro %}
+
+{%- from "macros/form.html" import image_upload as _image_upload -%}
+{% macro image_upload()  %}
+    {{ _image_upload(*varargs, **kwargs) }}
+{%- endmacro -%}
