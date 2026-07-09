@@ -1,171 +1,35 @@
+{% set lang_prefix = '/fr' if request.environ.CKAN_LANG == 'fr' and not request.path.startswith('/fr') else '' %}
+{%- set french = lang_prefix=="/fr" -%}
+
 <div id="acknowledgment-statement" class="mt-4">
     <div class="statement container">{{ _("The Government of Yukon acknowledges that Indigenous Peoples have traditional territories throughout the Yukon and celebrates their role as stewards of the lands and waters and their ongoing connection to this place.") }}</div>
 </div>
 
-{% set lang_prefix = '/fr' if request.environ.CKAN_LANG == 'fr' and not request.path.startswith('/fr') else '' %}
-<footer id="footer" class="footer bg-eden max-w-none text-white">
-    <div class="footer-left overflow-hidden py-0 px-1">
-        <div class="container-lg footer-logos">
-            <a href="{{ h.url_for('home.index') }}" >
-                <img src="/images/logo-white.svg" alt="Yukon" style="width: 107px;" />
-            </a>
-        </div>
-    </div>
-    <div class="footer-right bg-tiber pb-2">
-        <div
-            class="container-lg d-md-flex align-items-md-start justify-content-md-between"
-        >
-            <div class="footer__menus text-base d-md-flex w-auto pt-4">
-                <div class="region region-footer-menu">
-                    <nav
-                        role="navigation"
-                        aria-labelledby="block-footermenu-menu"
-                        id="block-footermenu"
-                        class="block block-menu navigation menu--menu-wet-footer"
-                    >
-                        <h2 class="block-title visually-hidden" id="block-footermenu-menu">
-                            {{ _("Footer menu") }}
-                        </h2>
 
-                        <ul class="menu">
-                            <li class="menu-item">
-                                <a href="https://yukon.ca{% if lang_prefix == '/fr' %}/fr{% endif %}">{{ _("Home") }}</a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="https://yukon.ca{% if lang_prefix == '/fr' %}/fr{% endif %}/documents">{{ _("Documents") }}</a>
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/arts-and-culture/events">{{ _("Events") }}</a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/arts-et-culture/activites">{{ _("Events") }}</a>
-                                {% endif %}
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/forms">{{ _("Forms") }}</a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/formulaires">{{ _("Forms") }}</a>
-                                {% endif %}
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/news">{{ _("News") }}</a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/communiques-de-presse">{{ _("News") }}</a>
-                                {% endif %}
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/your-government/legislation/find-government-legislation" >
-                                        {{ _("Legislation") }}
-                                    </a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/textes-legislatifs" >
-                                        {{ _("Legislation") }}
-                                    </a>
-                                {% endif %}
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/places">{{ _("Places") }}</a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/etablissements-installations-et-bureaux">{{ _("Places") }}</a>
-                                {% endif %}
-                            </li>
-                            </li>
-                        </ul>
-                    </nav>
-                    <nav
-                        role="navigation"
-                        aria-labelledby="block-secondaryfootermenu-menu"
-                        id="block-secondaryfootermenu"
-                        class="block block-menu navigation menu--menu-secondary-footer-menu"
-                    >
-                        <h2
-                            class="block-title visually-hidden"
-                            id="block-secondaryfootermenu-menu"
-                        >
-                            {{ _("Secondary Footer Menu") }}
-                        </h2>
+{%- call ui.util.call(ui.footer) -%}
+    {%- call ui.util.call(ui.footer_main) -%}
+        <a href="{{ h.url_for('home.index') }}" >
+            <img src="/images/logo-white.svg" alt="Yukon" style="width: 107px;" />
+        </a>
+    {%- endcall %}
 
-                        <ul class="menu">
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/your-government/contact-and-follow-government/contact-government" >
-                                        {{ _("Contact us") }}
-                                    </a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/votre-gouvernement/joindre-ou-suivre-le-gouvernement/contacter-le-gouvernement" >
-                                        {{ ("Contact us") }}
-                                    </a>
-                                {% endif %}
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/copyright" >
-                                        {{ _("Copyright") }}
-                                    </a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/droit-dauteur" >
-                                        {{ _("Copyright") }}
-                                    </a>
-                                {% endif %}
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/disclaimer" >
-                                        {{ _("Disclaimer") }}
-                                    </a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/avertissement" >
-                                        {{ _("Disclaimer") }}
-                                    </a>
-                                {% endif %}
-                            </li>
-                            <li class="menu-item">
-                                {% if lang_prefix != '/fr' %}
-                                    <a href="https://yukon.ca/en/privacy-statement" >
-                                        {{ _("Privacy statement") }}
-                                    </a>
-                                {% else %}
-                                    <a href="https://yukon.ca/fr/avis-de-confidentialite" >
-                                        {{ _("Privacy statement") }}
-                                    </a>
-                                {% endif %}
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-            <div class="footer__legal font-light w-auto flex pt-2 pt-md-4 pb-2 ms-1 text-end">
-                ©&nbsp;{{ ui.util.now().year }}&nbsp;<a href="https://yukon.ca{% if lang_prefix == '/fr' %}/fr{% endif %}">{{ _("Government of Yukon") }}</a>
-                <div class="footer__feedback mt-1" style="font-weight: normal;">
-                    {% set current_url = request.url | urlencode %}
+    {%- call ui.util.call(ui.footer_secondary, french=lang_prefix=="/fr") -%}
+        {%- call ui.util.call(ui.footer_secondary_nav, attrs={"aria-label": _("Footer menu")}) -%}
+            {{ ui.footer_secondary_nav_item(_("Home"), href="https://yukon.ca" ~ ("/fr" if french else "")) }}
+            {{ ui.footer_secondary_nav_item(_("Documents"), href="https://yukon.ca" ~ ("/fr" if french else "") ~ "/documents") }}
+            {{ ui.footer_secondary_nav_item(_("Events"), href="https://yukon.ca/fr/arts-et-culture/activites" if french else "https://yukon.ca/en/arts-and-culture/events") }}
+            {{ ui.footer_secondary_nav_item(_("Forms"), href="https://yukon.ca/fr/formulaires" if french else "https://yukon.ca/forms") }}
+            {{ ui.footer_secondary_nav_item(_("News"), href="https://yukon.ca/fr/communiques-de-presse" if french else "https://yukon.ca/en/news") }}
+            {{ ui.footer_secondary_nav_item(_("Legislation"), href="https://yukon.ca/fr/textes-legislatifs" if french else "https://yukon.ca/en/your-government/legislation/find-government-legislation") }}
+            {{ ui.footer_secondary_nav_item(_("Places"), href="https://yukon.ca/fr/etablissements-installations-et-bureaux" if french else "https://yukon.ca/en/places") }}
+        {%- endcall %}
 
-                    {% set feedback_url = (
-            "https://forms2.service.yukon.ca/content/yukon-forms/ca/fr/hpw/Parlez-nous-de-votre-experience-dutilisation-des-services-en-ligne.html"
-            if lang_prefix == "/fr"
-            else
-            "https://forms2.service.yukon.ca/content/yukon-forms/ca/en/hpw/submit-feedback-about-your-digital-service-experience.html"
-                        ) %}
+        {%- call ui.util.call(ui.footer_secondary_nav, attrs={"aria-label": _("Secondary Footer Menu")}) -%}
+            {{ ui.footer_secondary_nav_item(_("Contact us"), href="https://yukon.ca/fr/votre-gouvernement/joindre-ou-suivre-le-gouvernement/contacter-le-gouvernement" if french else "https://yukon.ca/en/your-government/contact-and-follow-government/contact-government") }}
+            {{ ui.footer_secondary_nav_item(_("Copyright"), href="https://yukon.ca/fr/droit-dauteur" if french else "https://yukon.ca/en/copyright") }}
+            {{ ui.footer_secondary_nav_item(_("Disclaimer"), href="https://yukon.ca/fr/avertissement" if french else "https://yukon.ca/en/disclaimer") }}
+            {{ ui.footer_secondary_nav_item(_("Privacy statement"), href="https://yukon.ca/fr/avis-de-confidentialite" if french else "https://yukon.ca/en/privacy-statement") }}
+        {%- endcall %}
 
-                    {% set feedback_url = feedback_url
-            ~ "?onlineService=Open%20government%20portal"
-            ~ "&url_referrer=" ~ current_url
-            ~ ("&afAcceptLang=fr-ca" if lang_prefix == "/fr" else "")
-                    %}
-
-                    <a
-                        id="footer-feedback-link"
-                        class="yg-submit-feedback-link"
-                        href="{{ feedback_url }}"
-                        target="_blank"
-                    >
-                        {{ _("Formuler un commentaire") if lang_prefix == "/fr" else _("Submit website feedback") }}
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</footer>
+    {%- endcall %}
+{%- endcall %}

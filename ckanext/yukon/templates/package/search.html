@@ -122,7 +122,7 @@
                      title=reordered_facet_titles[facet],
                      name=facet,
                      search_facets=search_facets,
-                     items=search_facets[facet]["items"]|sort(attribute="name", reverse=true) %}
+                     items=h.get_facet_items_dict(facet, search_facets)|sort(attribute="name", reverse=true) %}
                 {% else %}
                     {% snippet 'snippets/facet_list.html', title=reordered_facet_titles[facet], name=facet, search_facets=search_facets %}
                 {% endif %}

@@ -4,7 +4,8 @@
 # CKAN core supports this short syntax. But internally it's unfolds into
 ## remote-ckan = https://github.com/ckan/ckan tag ckan-2.10.4
 # if you want to use CKAN fork or specific commit, use this full specification
-ckan_tag = ckan-2.11.5
+# ckan_tag = ckan-2.12.0
+remote-ckan = https://github.com/ckan/ckan commit db71444 # dev-v2.12, 2026-07-06
 
 ext_list = \
 	scheming \
@@ -15,17 +16,13 @@ ext_list = \
 	downloadall \
 	harvest theming
 
-remote-scheming = https://github.com/ckan/ckanext-scheming.git tag release-3.1.0
+remote-scheming = https://github.com/ckan/ckanext-scheming.git commit ea79dc5 # 2026-07-06
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
-remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.3.10
+remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.4.1
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
-remote-harvest = https://github.com/ckan/ckanext-harvest.git tag v1.6.1
+remote-harvest = https://github.com/ckan/ckanext-harvest.git commit 1a9a987 # 2026-06-19
 remote-downloadall = https://github.com/SDM-TIB/ckanext-downloadall.git commit 4e0965e # 2026-04-09, +1 commit after v0.3.0
-remote-theming = https://github.com/dataShades/ckanext-theming commit 3651549 # 2026-06-06
-
-package_extras-remote-googleanalytics = requirements
-package_extras-remote-files = opendal,libcloud
-package_extras-remote-resource-indexer = pdf
+remote-theming = https://github.com/dataShades/ckanext-theming commit 76c7df1 # 2026-07-08
 
 ###############################################################################
 #                              requirements: end                              #

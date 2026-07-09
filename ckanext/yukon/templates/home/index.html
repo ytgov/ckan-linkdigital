@@ -1,5 +1,5 @@
 {% extends "page.html" %}
-{% import "frontend/components.html" as components %}
+
 {% set lang_prefix = '/fr' if request.environ.CKAN_LANG == 'fr' and not request.path.startswith('/fr') else '' %}
 
 {% block maintag %}{% endblock %}
@@ -57,7 +57,7 @@
                 </div>
                 <div class="pt-5 pb-5 border-bottom">
                     <div class="container">
-                        {{ components.search_section({
+                        {{ ui.yukon_search_section({
                             "title": _("Open information"),
                             "id": "open-information",
                             "description": _("Find annual reports, news releases, scientific research publications, and other information."),
@@ -73,7 +73,7 @@
                 </div>
                 <div class="pt-5 pb-5 border-bottom">
                     <div class="container">
-                        {{ components.search_section({
+                        {{ ui.yukon_search_section({
                             "title": _("Open data"),
                             "id": "open-data",
                             "description": _("Find statistical and administrative data, geospatial data, and other machine-readable data."),
@@ -89,7 +89,7 @@
                 </div>
                 <div class="pt-5 pb-5 ">
                     <div class="container">
-                        {{ components.search_section({
+                        {{ ui.yukon_search_section({
                             "title": _("Completed Access to Information requests"),
                             "id": "completed-access-to-information-requests",
                             "description": _("Find completed Access to Information requests and responsive records."),

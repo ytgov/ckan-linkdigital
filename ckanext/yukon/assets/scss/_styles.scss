@@ -2907,6 +2907,10 @@ textarea.form-control.is-invalid {
         background-color 0.15s ease-in-out,
         border-color 0.15s ease-in-out,
         box-shadow 0.15s ease-in-out;
+
+    .fa {
+        margin-right: 0.25rem;
+    }
 }
 @media (prefers-reduced-motion: reduce) {
     .btn {
@@ -3752,8 +3756,15 @@ fieldset:disabled .btn {
     --bs-nav-tabs-link-active-border-color: var(--bs-border-color)
         var(--bs-border-color) var(--bs-body-bg);
     border-bottom: var(--bs-nav-tabs-border-width) solid
-        var(--bs-nav-tabs-border-color);
+                   var(--bs-nav-tabs-border-color);
+
+    a {
+        .fa {
+            margin-right: 0.25rem;
+        }
+    }
 }
+
 .nav-tabs .nav-link {
     margin-bottom: calc(-1 * var(--bs-nav-tabs-border-width));
     border: var(--bs-nav-tabs-border-width) solid rgba(0, 0, 0, 0);
@@ -11458,6 +11469,10 @@ body .aurora--mini:before {
     content: "";
     background-image: url(/images/Aurora-mini.svg);
     background-repeat: no-repeat;
+}
+#content {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }
 .yt-header-container {
     border-bottom: 4px solid #ffcd57;

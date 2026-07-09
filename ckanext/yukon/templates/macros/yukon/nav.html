@@ -1,6 +1,10 @@
-{%- macro breadcrumb(content, href, initial, active) -%}
-    <li class="{{ 'home' if initial }} {{ 'active' if active }}">
-        {{ ui.link(content, href=href, **kwargs) }}
+{%- macro footer_main_nav_item(content, href) -%}
+    {{ ui.link(content, href=href, **kwargs) }}
+{%- endmacro %}
+
+{%- macro footer_secondary_nav_item(content, href) -%}
+    <li {{ ui.util.attrs(kwargs, {"class": "menu-item"}) }}>
+        {{ ui.link(content, href, **kwargs) }}
     </li>
 {%- endmacro %}
 
@@ -22,6 +26,19 @@
     {%- endcall %}
 {%- endmacro %}
 
+
+
+
+
+
+
+
+{%- macro breadcrumb(content, href, initial, active) -%}
+    <li class="{{ 'home' if initial }} {{ 'active' if active }}">
+        {{ ui.link(content, href=href, **kwargs) }}
+    </li>
+{%- endmacro %}
+
 {%- macro sidebar_nav_item(content, href, active) -%}
     {{ ui.nav_item(content, href, active, **kwargs) }}
 {%- endmacro %}
@@ -35,11 +52,6 @@
     {{ ui.nav_item(prefix ~ content, href=href, active=active, **kwargs) }}
 {%- endmacro %}
 
-{%- macro footer_main_nav_item(content, href, active) -%}
-    <li>{{ ui.link(content, href=href, **kwargs) }}</li>
-{%- endmacro %}
-
-{%- macro footer_secondary_nav_item(content, href, active) -%}{{ ui.nav_item(content, href, active, **kwargs) }}{%- endmacro %}
 
 {%- macro page_action(content, href) -%}
     {{ ui.button(content, href=href, **kwargs) }}

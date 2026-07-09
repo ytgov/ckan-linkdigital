@@ -1,7 +1,12 @@
 {% ckan_extends %}
 
+{%- block title -%}
+    {{ self.subtitle() }}
+    {{ ui.subtitle_item("Gouvernement ouvert - Gouvernement du Yukon" if h.lang() == "fr" else g.site_title, initial=true) }}
+{%- endblock -%}
+
 {% block head_extras %}
-    {{super()}}
+    {{ super() }}
     <script>
         var _paq = window._paq = window._paq || [];
         _paq.push(['trackPageView']);
