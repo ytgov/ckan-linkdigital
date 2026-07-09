@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any
 
 import requests
-import sqlalchemy as sa
 from typing_extensions import override
 
 import ckan.plugins.toolkit as tk
