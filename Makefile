@@ -21,7 +21,7 @@ remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
 remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.4.1
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 remote-harvest = https://github.com/ckan/ckanext-harvest.git commit 1a9a987 # 2026-06-19
-remote-downloadall = https://github.com/SDM-TIB/ckanext-downloadall.git commit 4e0965e # 2026-04-09, +1 commit after v0.3.0
+remote-downloadall = https://github.com/DataShades/ckanext-downloadall commit c2a3848 # 2026-07-15
 remote-theming = https://github.com/dataShades/ckanext-theming commit 76c7df1 # 2026-07-08
 
 ###############################################################################
