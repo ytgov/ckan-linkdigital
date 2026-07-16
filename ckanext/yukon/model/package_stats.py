@@ -48,7 +48,7 @@ class PackageStats:
     package: Mapped[model.Package] = relationship(
         model.Package,
         lazy="joined",
-        backref=backref("yukon_stats", uselist=False),
+        backref=backref("yukon_stats", uselist=False, passive_deletes=True),
         init=False,
         compare=False,
     )
