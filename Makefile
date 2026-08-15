@@ -14,7 +14,7 @@ ext_list = \
 	xloader \
 	ingest \
 	downloadall \
-	harvest theming
+	harvest theming fpx
 
 remote-scheming = https://github.com/ckan/ckanext-scheming.git commit ea79dc5 # 2026-07-06
 remote-envvars = https://github.com/ckan/ckanext-envvars tag v0.0.6
@@ -22,7 +22,8 @@ remote-saml = https://github.com/DataShades/ckanext-saml.git tag v0.4.1
 remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 remote-harvest = https://github.com/ckan/ckanext-harvest.git commit 1a9a987 # 2026-06-19
 remote-downloadall = https://github.com/DataShades/ckanext-downloadall commit c2a3848 # 2026-07-15
-remote-theming = https://github.com/dataShades/ckanext-theming commit 76c7df1 # 2026-07-08
+remote-theming = https://github.com/dataShades/ckanext-theming commit 12c6ded # 2026-08-14
+remote-fpx = https://github.com/DataShades/ckanext-fpx tag v0.7.1
 
 ###############################################################################
 #                              requirements: end                              #

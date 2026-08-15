@@ -79,3 +79,7 @@ groups:
             description: |
               Maximum `limit` allowed via the API action. Set to 0 (or omit)
               for no limit.
+
+          - key: yukon.use_fpx
+            type: bool
+            description: Temporary option for testing FPX on UAT
