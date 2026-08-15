@@ -96,10 +96,7 @@
                                 </a>
                             {% endif %}
 
-                            {%- with fpx_urls=h.yukon_fpx_resources(pkg.resources) -%}
-                                {{ ui.button("Download all (FPX)", stype="primary", _extra_class="resource-url-analytics", on={"click": "ckan.sandbox().publish('fpx:ticket:order', 'resource', "|safe~ fpx_urls|tojson ~")"}) if fpx_urls|length > 1 and ui.util.get_config("yukon.use_fpx") }}
-                            {%- endwith %}
-
+                            {{ ui.button("Download all (FPX)", stype="primary", _extra_class="resource-url-analytics", href=h.url_for("yukon.download_all", id=pkg.id)) if uploaded_count > 1 and ui.util.get_config("yukon.use_fpx") }}
 
                         </div>
 

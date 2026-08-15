@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import json
 from typing import Any
 
 from flask import Blueprint
@@ -81,3 +83,31 @@ bp.add_url_rule(
     "/dataset/new",
     view_func=SelectDatasetTypeView.as_view("select_dataset_type"),
 )
+
+
+@bp.route("/dataset/<id>/download-all")
+def download_all(id: str):
+    pkg = tk.get_action("package_show")({}, {"id": id})
+
+    headers = {}
+    if credentials := tk.config["yukon.http_auth"]:
+        encoded = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+        headers = {"Authorization": f"Basic {encoded}"}
+
+    items = [
+        {"id": res["id"], "url": res["url"], "headers": headers}
+        for res in pkg["resources"]
+        if res.get("url_type") == "upload" and not res.get("downloadall_metadata_modified")
+    ]
+
+    ticket = tk.get_action("fpx_order_ticket")(
+        {},
+        {
+            "type": "zip",
+            "items": base64.encodebytes(json.dumps(items).encode()).decode(),
+        },
+    )
+
+    id_ = ticket["id"]
+
+    return tk.redirect_to(tk.h.fpx_service_url() + f"ticket/{id_}/download")
