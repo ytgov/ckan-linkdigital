@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import fnmatch
 import logging
 from collections.abc import Iterable
@@ -161,4 +162,11 @@ def yukon_count_uploaded_resources(pkg: dict[str, Any]):
 
 def yukon_fpx_resources(resources: list[dict[str, Any]]) -> Iterable[dict[str, Any]]:
     """Yukon FPX resources generator."""
-    return [{"id": res["id"], "url": res["url"]} for res in resources if res.get("url_type") == "upload"]
+    headers = {}
+    if credentials := tk.config["yukon.http_auth"]:
+        encoded = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+        headers = {"Authorization": f"Basic {encoded}"}
+
+    return [
+        {"id": res["id"], "url": res["url"], "headers": headers} for res in resources if res.get("url_type") == "upload"
+    ]
