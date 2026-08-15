@@ -23,7 +23,7 @@ remote-ingest = https://github.com/DataShades/ckanext-ingest tag v1.4.6
 remote-harvest = https://github.com/ckan/ckanext-harvest.git commit 1a9a987 # 2026-06-19
 remote-downloadall = https://github.com/DataShades/ckanext-downloadall commit c2a3848 # 2026-07-15
 remote-theming = https://github.com/dataShades/ckanext-theming commit 12c6ded # 2026-08-14
-remote-fpx = https://github.com/DataShades/ckanext-fpx tag v0.7.1
+remote-fpx = https://github.com/DataShades/ckanext-fpx tag v0.7.2
 
 ###############################################################################
 #                              requirements: end                              #
