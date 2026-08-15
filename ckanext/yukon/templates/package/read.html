@@ -96,7 +96,7 @@
                                 </a>
                             {% endif %}
 
-                            {%- with fpx_urls=pkg.resources|selectattr("url_type", "equalto", "upload")|list -%}
+                            {%- with fpx_urls=h.yukon_fpx_resources(pkg.resources) -%}
                                 {{ ui.button("Download all (FPX)", stype="primary", _extra_class="resource-url-analytics", on={"click": "ckan.sandbox().publish('fpx:ticket:order', 'resource', "|safe~ fpx_urls|tojson ~")"}) if fpx_urls and ui.util.get_config("yukon.use_fpx") }}
                             {%- endwith %}
 

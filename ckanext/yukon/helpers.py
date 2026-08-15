@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import fnmatch
 import logging
+from collections.abc import Iterable
 from typing import Any, cast
 
 import ckan.plugins.toolkit as tk
@@ -156,3 +157,8 @@ def yukon_count_uploaded_resources(pkg: dict[str, Any]):
         if res.get("url_type") == "upload":
             count += 1
     return count
+
+
+def yukon_fpx_resources(resources: list[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+    """Yukon FPX resources generator."""
+    return [{"id": res["id"], "url": res["url"]} for res in resources if res.get("url_type") == "upload"]
