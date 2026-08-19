@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 import click
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
+
+import ckan.plugins.toolkit as tk
+from ckan import model
+from ckan.lib.search import rebuild
 
 from ckanext.yukon.cli.metadata_modified import restore_metadata_modified
 from ckanext.yukon.cli.migration import data_migration
@@ -23,3 +29,44 @@ def yukon(ctx: click.Context):
 
 yukon.add_command(data_migration)
 yukon.add_command(restore_metadata_modified)
+
+
+@yukon.group()
+def maintain():
+    """Portal maintenance commands."""
+
+
+@maintain.command()
+def drop_downloadall():
+    """Remove pre-computed dataset archives.
+
+    This command is a part of migration to FPX. Can be removed after
+    YUKONXCIAA-45 deployment.
+
+    """
+    stmt = sa.select(model.Resource).where(
+        sa.cast(model.Resource.extras, JSONB).has_key("downloadall_metadata_modified")
+    )
+
+    total = model.Session.scalar(stmt.with_only_columns(sa.func.count()))
+    click.echo(f"Found {total} resources created by downloadall extension")
+    if not total:
+        click.secho("Done", fg="green")
+        return
+
+    if click.confirm("Show these resources?"):
+        for res in model.Session.scalars(stmt):
+            url = tk.url_for("dataset_resource.read", id=res.package_id, resource_id=res.id, _external=True)
+            click.echo(f"ID: {res.id}\tURL: {url}")
+
+    if click.confirm("Remove these resources?"):
+        pkg_ids = set(model.Session.scalars(stmt.with_only_columns(model.Resource.package_id)))
+
+        delete_stmt = sa.delete(model.Resource).where(model.Resource.id.in_(stmt.with_only_columns(model.Resource.id)))
+        model.Session.execute(delete_stmt)
+        model.Session.commit()
+
+        for pkg in pkg_ids:
+            rebuild(pkg)
+
+    click.secho("Done", fg="green")
