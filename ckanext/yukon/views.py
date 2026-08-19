@@ -97,7 +97,7 @@ def download_all(id: str):
     items = [
         {"id": res["id"], "url": res["url"], "headers": headers}
         for res in pkg["resources"]
-        if res.get("url_type") == "upload" and not res.get("downloadall_metadata_modified")
+        if res.get("url_type") == "upload"
     ]
 
     ticket = tk.get_action("fpx_order_ticket")(

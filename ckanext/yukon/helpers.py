@@ -149,9 +149,6 @@ def yukon_count_uploaded_resources(pkg: dict[str, Any]):
     """
     count = 0
     for res in pkg.get("resources", []):
-        # Don't count the downloadall zip itself
-        if res.get("downloadall_metadata_modified"):
-            continue
         # Only count uploaded resources, not linked ones
         if res.get("url_type") == "upload":
             count += 1

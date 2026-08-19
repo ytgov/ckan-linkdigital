@@ -11,9 +11,6 @@
     {% snippet "package/snippets/resources.html", pkg=pkg, active=res.id %}
 
     #}
-{#    Don't display the Download All ZIP resource #}
-{% set zip_res = h.downloadall__pop_zip_resource(pkg) %}
-
 {% set resources = pkg.resources or [] %}
 
 {% set can_edit = pkg and h.check_access('package_update', {'id':pkg.id }) %}

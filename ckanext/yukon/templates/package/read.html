@@ -73,7 +73,6 @@
                             {% endblock %}
                         {% endblock %}
 
-                        {% set zip_res = h.downloadall__pop_zip_resource(pkg) %}
                         {% if pkg.resources %}
                             {% block package_resources %}
                                 {% snippet "package/snippets/resources_list.html", pkg=pkg, resources=pkg.resources,
@@ -90,13 +89,7 @@
                             <a href="{{h.url_for('activity.package_activity', id=pkg.name)}}" class="btn btn-outline-primary">{{_("View changes")}}</a>
                             <button class="btn btn-outline-primary btn-api-access"  data-toggle="modal" data-target="#api-access-modal">{{_("Access via API")}}</button>
                             {% set uploaded_count = h.yukon_count_uploaded_resources(pkg) %}
-                            {% if zip_res and uploaded_count > 1 %}
-                                <a class="btn btn-primary resource-url-analytics resource-type-{{ zip_res.resource_type }}" href="{{ zip_res.url }}">
-                                    <i class="fa fa-arrow-circle-o-down"></i> {{ _('Download all') }}
-                                </a>
-                            {% endif %}
-
-                            {{ ui.button("Download all (FPX)", stype="primary", _extra_class="resource-url-analytics", href=h.url_for("yukon.download_all", id=pkg.id)) if uploaded_count > 1 and ui.util.get_config("yukon.use_fpx") }}
+                            {{ ui.button("Download all", stype="primary", _extra_class="resource-url-analytics", href=h.url_for("yukon.download_all", id=pkg.id)) if uploaded_count > 1  }}
 
                         </div>
 
