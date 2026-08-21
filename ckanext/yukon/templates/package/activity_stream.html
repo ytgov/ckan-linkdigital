@@ -1,7 +1,7 @@
 {% if c.userobj %}
 
     {% ckan_extends %}
-    
+
 {% else %}
 
 {% extends "package/read.html" %}
@@ -11,7 +11,7 @@
   {% block primary_content_inner %}
     <h1>
       <a href="{{ h.url_for('%s.read' % pkg.type, id=pkg.name) }}" class="d-flex align-items-center" style=" text-decoration:none!important">
-        <i class="fa fa-chevron-left mt-1" style="font-size:24px;"></i> 
+        <i class="fa fa-chevron-left mt-1" style="font-size:24px;"></i>
         {{pkg.title}}
       </a>
     </h1>

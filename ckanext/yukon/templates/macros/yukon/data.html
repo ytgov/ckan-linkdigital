@@ -1,0 +1,22 @@
+
+{%- macro table(content, striped, bordered, condensed, hover, caption) -%}
+    {%- set class = "table" -%}
+    {%- if bordered -%}
+        {%- set class = class ~ ' table-bordered' -%}
+    {%- endif %}
+    {%- if striped -%}
+        {%- set class = class ~ ' table-striped' -%}
+    {%- endif %}
+    {%- if hoover -%}
+        {%- set class = class ~ ' table-hoover' -%}
+    {%- endif %}
+    {%- if condensed -%}
+        {%- set class = class ~ ' table-sm' -%}
+    {%- endif %}
+    <table {{ ui.util.attrs(kwargs, {"class": class}) }}>
+        {%- if caption -%}
+            <caption>{{ caption }}</caption>
+        {%- endif %}
+        {{ content }}
+    </table>
+{%- endmacro %}

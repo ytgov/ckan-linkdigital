@@ -1,15 +1,23 @@
+from __future__ import annotations
+
 import calendar
 import contextlib
 import datetime
 import http.client
 import json
 import logging
+from typing import Any
 from urllib.parse import urlencode, urlparse
 
-from sqlalchemy import or_
+import sqlalchemy as sa
 
 from ckan import model
+from ckan.exceptions import CkanConfigurationException
+from ckan.lib.search import rebuild
 from ckan.plugins import toolkit as tk
+
+from . import config
+from .model import PackageStats
 
 log = logging.getLogger(__name__)
 
@@ -18,61 +26,29 @@ USAGE_EXTRA_KEYS = ["visits", "downloads", "visit_90_days", "download_90_days"]
 
 
 class MatomoClient:
+    base_url: str
+    site_id: str
+    token_auth: str
+    timeout: int
+
     def __init__(self):
-        self.base_url = tk.config.get("ckanext.yukon.matomo.api_url", "").strip()
-        self.site_id = tk.config.get("ckanext.yukon.matomo.site_id", "").strip()
-        self.token_auth = tk.config.get("ckanext.yukon.matomo.token_auth", "").strip()
-        self.timeout = int(tk.config.get("ckanext.yukon.matomo.timeout_seconds", 20))
-
-        if not self.base_url:
-            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.api_url")
-        if not self.site_id:
-            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.site_id")
-        if not self.token_auth:
-            raise tk.ValidationError("Missing config: ckanext.yukon.matomo.token_auth")
-
-        self.base_url = self.base_url.rstrip("/")
+        self.base_url = config.matomo_api_url()
+        self.site_id = config.matomo_site_id()
+        self.token_auth = config.matomo_token()
+        self.timeout = config.matomo_timeout()
 
     def _http_conn(self):
         parsed = urlparse(self.base_url)
         host = parsed.hostname
+        if not host:
+            msg = f"Cannot parse host: {self.base_url}"
+            raise CkanConfigurationException(msg)
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
         if parsed.scheme == "https":
             return http.client.HTTPSConnection(host, port, timeout=self.timeout)
         return http.client.HTTPConnection(host, port, timeout=self.timeout)
 
-    def _call(self, method, extra_params):
-        params = {
-            "module": "API",
-            "method": method,
-            "idSite": self.site_id,
-            "format": "JSON",
-            "filter_limit": -1,
-            "flat": 1,
-        }
-        params.update(extra_params)
-        query = urlencode(params, doseq=True)
-        body = urlencode({"token_auth": self.token_auth}).encode("utf-8")
-        parsed = urlparse(self.base_url)
-        path = parsed.path.rstrip("/") + "/index.php?" + query
-        conn = self._http_conn()
-        try:
-            conn.request(
-                "POST",
-                path,
-                body=body,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-            )
-            resp = conn.getresponse()
-            raw = resp.read().decode("utf-8")
-        finally:
-            conn.close()
-        data = json.loads(raw)
-        if isinstance(data, dict) and data.get("result") == "error":
-            raise tk.ValidationError("Matomo API error: {}".format(data.get("message")))
-        return data
-
-    def _bulk_call(self, requests_payload):
+    def _bulk_call(self, requests_payload: list[dict[str, Any]]) -> list[list[dict[str, Any]] | dict[str, Any]]:
         params = {
             "module": "API",
             "method": "API.getBulkRequest",
@@ -98,11 +74,12 @@ class MatomoClient:
         finally:
             conn.close()
         data = json.loads(raw)
-        if isinstance(data, dict) and data.get("result") == "error":
-            raise tk.ValidationError("Matomo API error: {}".format(data.get("message")))
+        if isinstance(data, dict):
+            raise tk.ValidationError(f"Matomo API error: {data}")
+
         return data
 
-    def _visits_payload(self, page_url, periods):
+    def _visits_payload(self, page_url: str, periods: list[tuple[str, str]]) -> list[dict[str, Any]]:
         """Build sub-request entries for page visit counts (per dataset URL)."""
         return [
             {
@@ -117,7 +94,7 @@ class MatomoClient:
             for period, date_value in periods
         ]
 
-    def _downloads_site_payload(self, periods):
+    def _downloads_site_payload(self, periods: list[tuple[str, str]]) -> list[dict[str, Any]]:
         """Build sub-request entries for site-wide download counts (archive-backed)."""
         return [
             {
@@ -134,29 +111,33 @@ class MatomoClient:
         ]
 
     @staticmethod
-    def _sum_visits(responses):
+    def _sum_visits(responses: list[list[dict[str, Any]] | dict[str, Any]]):
         total = 0
         for response in responses:
             if isinstance(response, list) and response:
                 response = response[0]
-            try:
-                total += int(float(response.get("nb_visits", 0)))
-            except (AttributeError, TypeError, ValueError):
+
+            if not response:
                 continue
+
+            if not isinstance(response, dict):
+                log.warning("Unexpected visit record: %s", response)
+                continue
+
+            total += response.get("nb_visits", 0)
         return total
 
     @staticmethod
-    def _build_download_map(responses):
+    def _build_download_map(responses: list[list[dict[str, Any]] | dict[str, Any]]) -> dict[str, Any]:
         """Aggregate nb_hits by normalised download URL across all period responses."""
-        url_hits = {}
+        url_hits: dict[str, Any] = {}
         for response in responses:
             rows = response if isinstance(response, list) else []
             for row in rows:
-                if not isinstance(row, dict):
-                    continue
-                raw_url = row.get("Actions_DownloadUrl") or row.get("label") or ""
+                raw_url: str = row.get("Actions_DownloadUrl") or row.get("label") or ""
                 if not raw_url or row.get("is_summary"):
                     continue
+
                 # Normalise: strip scheme, lowercase, no trailing slash
                 parsed = urlparse(raw_url if "://" in raw_url else "http://" + raw_url)
                 key = (parsed.netloc.lower() + parsed.path).rstrip("/")
@@ -166,7 +147,7 @@ class MatomoClient:
                 url_hits[key] = url_hits.get(key, 0) + hits
         return url_hits
 
-    def prefetch_downloads(self, periods):
+    def prefetch_downloads(self, periods: list[tuple[str, str]]) -> dict[str, Any]:
         """Fetch site-wide download counts for all periods in one bulk request.
         Returns a dict mapping normalised URL path to total hit count.
         """
@@ -176,7 +157,7 @@ class MatomoClient:
         responses = self._bulk_call(payload)
         return self._build_download_map(responses)
 
-    def fetch_page_visits(self, page_url, periods_3y, periods_90d):
+    def fetch_page_visits(self, page_url: str, periods_3y: list[tuple[str, str]], periods_90d: list[tuple[str, str]]):
         """Fetch page visit counts for both time windows in one request."""
         v3y = self._visits_payload(page_url, periods_3y)
         v90 = self._visits_payload(page_url, periods_90d)
@@ -189,7 +170,12 @@ class MatomoClient:
         visits_90d = self._sum_visits(responses[split:])
         return visits_3y, visits_90d
 
-    def fetch_page_visits_multilang(self, page_urls, periods_3y, periods_90d):
+    def fetch_page_visits_multilang(
+        self,
+        page_urls: list[str],
+        periods_3y: list[tuple[str, str]],
+        periods_90d: list[tuple[str, str]],
+    ):
         """Fetch page visit counts for multiple language URLs combined.
 
         Args:
@@ -203,8 +189,8 @@ class MatomoClient:
         if not page_urls:
             return 0, 0
 
-        all_payloads_3y = []
-        all_payloads_90d = []
+        all_payloads_3y: list[dict[str, Any]] = []
+        all_payloads_90d: list[dict[str, Any]] = []
 
         for url in page_urls:
             all_payloads_3y.extend(self._visits_payload(url, periods_3y))
@@ -227,20 +213,12 @@ class MatomoClient:
         return visits_3y, visits_90d
 
 
-def _iter_records(payload):
-    if isinstance(payload, list):
-        for row in payload:
-            if isinstance(row, dict):
-                yield row
-    elif isinstance(payload, dict):
-        for value in payload.values():
-            if isinstance(value, list):
-                for row in value:
-                    if isinstance(row, dict):
-                        yield row
-
-
-def _sum_downloads_from_map(download_map, candidate_urls, package_id, package_type):
+def _sum_downloads_from_map(
+    download_map: dict[str, Any],
+    candidate_urls: list[str],
+    package_id: str,
+    package_type: str,
+):
     """Sum download hits for a dataset's resource URLs from a pre-fetched site-wide map.
 
     Uploaded files: match any map key that contains the package resource path prefix.
@@ -264,38 +242,20 @@ def _sum_downloads_from_map(download_map, candidate_urls, package_id, package_ty
     return total
 
 
-def _normalize_url(value):
-    if not value:
-        return ""
-    parsed = urlparse(value)
-    path = parsed.path.rstrip("/") if parsed.path else ""
-    if parsed.netloc:
-        return f"{parsed.netloc.lower()}{path}"
-    return value.rstrip("/").lower()
-
-
-def _shift_months(value, months):
-    month_index = (value.month - 1) + months
-    year = value.year + (month_index // 12)
-    month = (month_index % 12) + 1
-    day = min(value.day, calendar.monthrange(year, month)[1])
-    return datetime.date(year, month, day)
-
-
-def _shift_years(value, years):
+def _shift_years(value: datetime.date, years: int):
     year = value.year + years
     day = min(value.day, calendar.monthrange(year, value.month)[1])
     return datetime.date(year, value.month, day)
 
 
-def _download_period_chunks(start_date, end_date):
+def _download_period_chunks(start_date: datetime.date, end_date: datetime.date) -> list[tuple[str, str]]:
     """Break a date range into yearly batches for download prefetch queries.
 
     Yearly batches avoid the silent per-sub-request filter_limit cap that occurs with 3
     years' worth of monthly chunks, while staying small enough to avoid server OOM that
     happens with a single 3-year range.
     """
-    chunks = []
+    chunks: list[tuple[str, str]] = []
     current = start_date
 
     while current <= end_date:
@@ -307,10 +267,10 @@ def _download_period_chunks(start_date, end_date):
     return chunks
 
 
-def _month_chunks(start_date, end_date):
+def _month_chunks(start_date: datetime.date, end_date: datetime.date) -> list[tuple[str, str]]:
     """Break a date range using period=month for full months, period=range for partial
     edges."""
-    chunks = []
+    chunks: list[tuple[str, str]] = []
     current = start_date
 
     while current <= end_date:
@@ -332,49 +292,7 @@ def _month_chunks(start_date, end_date):
     return chunks
 
 
-def _sum_metric_for_urls(records, candidate_urls, metric_keys):
-    candidates = set()
-    for url in candidate_urls:
-        if not url:
-            continue
-        normalized = _normalize_url(url)
-        if normalized:
-            candidates.add(normalized)
-
-    total = 0
-    for row in _iter_records(records):
-        row_urls = []
-        for value in (row.get("label"), row.get("url")):
-            normalized_value = _normalize_url(value)
-            if normalized_value:
-                row_urls.append(normalized_value)
-
-        if not row_urls:
-            continue
-
-        if any(row_url in candidates or any(c in row_url or row_url in c for c in candidates) for row_url in row_urls):
-            for metric_key in metric_keys:
-                value = row.get(metric_key)
-                if value is None:
-                    continue
-                try:
-                    total += int(float(value))
-                except (TypeError, ValueError):
-                    continue
-                break
-    return total
-
-
-def _dataset_url(package):
-    """Get the primary (English) dataset URL using the correct package type."""
-    site_url = tk.config.get("ckan.site_url", "").rstrip("/")
-    dataset_type = (package.type or "dataset").strip("/")
-    if site_url:
-        return f"{site_url}/{dataset_type}/{package.name}"
-    return f"/{dataset_type}/{package.name}"
-
-
-def _dataset_urls_multilang(package):
+def _dataset_urls_multilang(package: model.Package) -> list[str]:
     """Get all language-variant URLs for a dataset (English + French).
 
     Returns a list of URLs to query for visit statistics, combining:
@@ -384,7 +302,7 @@ def _dataset_urls_multilang(package):
     site_url = tk.config.get("ckan.site_url", "").rstrip("/")
     dataset_type = (package.type or "dataset").strip("/")
 
-    urls = []
+    urls: list[str] = []
 
     # English URL
     if site_url:
@@ -402,16 +320,13 @@ def _dataset_urls_multilang(package):
     return urls
 
 
-def _dataset_download_urls(package):
+def _dataset_download_urls(package: model.Package) -> list[str]:
     site_url = tk.config.get("ckan.site_url", "").rstrip("/")
-    urls = []
+    urls: list[str] = []
     for resource in package.resources:
         if resource.state != "active":
             continue
         if not resource.url:
-            continue
-        extras = getattr(resource, "extras", None) or {}
-        if isinstance(extras, dict) and "downloadall_datapackage_hash" in extras:
             continue
 
         resource_url = resource.url
@@ -436,39 +351,14 @@ def _dataset_download_urls(package):
     return urls
 
 
-def _get_package_by_ref(dataset_ref):
-    package = model.Package.get(dataset_ref)
-    if package and package.state == "active":
-        return package
-
-    package = model.Session.query(model.Package).filter_by(name=dataset_ref, state="active").first()
-    if package:
-        return package
-
-    raise tk.ObjectNotFound(f"Dataset not found: {dataset_ref}")
-
-
-def _upsert_extra(package_id, key, value):
-    existing = model.Session.query(model.PackageExtra).filter_by(package_id=package_id, key=key).first()
-    value = str(value)
-    if existing:
-        if existing.value != value:
-            existing.value = value
-            return True
-        return False
-
-    model.Session.add(model.PackageExtra(package_id=package_id, key=key, value=value))
-    return True
-
-
-def _active_packages_query(dataset_refs=None):
+def _active_packages_query(dataset_refs: list[str] | None = None):
     query = model.Session.query(model.Package).filter(
         model.Package.state == "active",
         model.Package.type.in_(SUPPORTED_TYPES),
     )
     if dataset_refs:
         query = query.filter(
-            or_(
+            sa.or_(
                 model.Package.name.in_(dataset_refs),
                 model.Package.id.in_(dataset_refs),
             )
@@ -476,7 +366,7 @@ def _active_packages_query(dataset_refs=None):
     return query.order_by(model.Package.metadata_created.desc())
 
 
-def _active_packages(dataset_refs=None, limit=None, offset=None):
+def _active_packages(dataset_refs: list[str] | None = None, limit: int | None = None, offset: int | None = None):
     query = _active_packages_query(dataset_refs=dataset_refs)
     if offset:
         query = query.offset(offset)
@@ -485,7 +375,12 @@ def _active_packages(dataset_refs=None, limit=None, offset=None):
     return query.all()
 
 
-def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
+def sync_usage_data(
+    dry_run: bool = False,
+    limit: int | None = None,
+    offset: int | None = None,
+    dataset_refs: list[str] | None = None,
+) -> dict[str, Any]:
     if limit is not None and limit < 1:
         raise tk.ValidationError("--limit must be greater than 0")
     if offset is not None and offset < 0:
@@ -540,20 +435,26 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
                 downloads = _sum_downloads_from_map(download_map_3y, download_urls, package.id, package.type)
                 download_90_days = _sum_downloads_from_map(download_map_90d, download_urls, package.id, package.type)
 
-                payload = {
-                    "visits": visits,
-                    "downloads": downloads,
-                    "visit_90_days": visit_90_days,
-                    "download_90_days": download_90_days,
-                }
+                stats = package.yukon_stats
+                if not stats:
+                    stats = PackageStats(id=package.id)
+                    model.Session.add(stats)
 
+                values = {
+                    "total_visits": visits,
+                    "total_downloads": downloads,
+                    "last_quarter_visits": visit_90_days,
+                    "last_quarter_downloads": download_90_days,
+                }
                 package_changed = False
-                for key in USAGE_EXTRA_KEYS:
-                    if _upsert_extra(package.id, key, payload[key]):
+                for prop, value in values.items():
+                    if getattr(stats, prop) != value:
+                        setattr(stats, prop, value)
                         package_changed = True
 
             if package_changed:
                 updated += 1
+                rebuild(package.id)
             else:
                 skipped += 1
 
@@ -561,7 +462,7 @@ def sync_usage_data(dry_run=False, limit=None, offset=None, dataset_refs=None):
                 "Matomo sync package=%s changed=%s payload=%s",
                 package.name,
                 package_changed,
-                payload,
+                values,
             )
         except Exception as exc:
             failed += 1

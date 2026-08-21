@@ -17,3 +17,68 @@ groups:
             description: |
                 Header that containing the real IP of the visitor. Set by
                 reverse-proxy.
+
+          - key: ckanext.yukon.limits.featured_datasets
+            editable: true
+            default: 1
+            type: int
+            description: |
+              Number of featured datasets to show on the home page.
+
+          - key: ckanext.yukon.limits.updated_information
+            editable: true
+            default: 3
+            type: int
+            description: |
+              Number of information records shown on the home page.
+
+          - key: ckanext.yukon.limits.added_request
+            editable: true
+            default: 3
+            type: int
+            description: |
+              Number of requests shown on the home page.
+
+          - key: ckanext.yukon.matomo.site_id
+            default: "1"
+            editable: true
+            description: Matomo site ID for tracking
+
+          - key: ckanext.yukon.matomo.tracker_url
+            default: "https://analytics.gov.yk.ca/"
+            editable: true
+            description: Matomo tracking URL
+
+          - key: ckanext.yukon.matomo.api_url
+            editable: true
+            required: true
+            default: "https://analytics.gov.yk.ca/"
+            description: |
+              Matomo API URL. This is used for fetching analytics data into
+              CKAN. It should be the internal URL of the Matomo service, not
+              the public facing URL.
+
+          - key: ckanext.yukon.matomo.token_auth
+            editable: true
+            required: true
+            description: |
+              Matomo token_auth. This is used for fetching analytics data into
+              CKAN. It should be the token_auth of a user with at least view
+              access to the Matomo site.
+
+          - key: ckanext.yukon.matomo.timeout_seconds
+            editable: true
+            type: int
+            default: 20
+            description: Timeout in seconds for Matomo API requests.
+
+          - key: ckanext.yukon.matomo.api_sync_max_limit
+            editable: true
+            type: int
+            default: 0
+            description: |
+              Maximum `limit` allowed via the API action. Set to 0 (or omit)
+              for no limit.
+
+          - key: yukon.http_auth
+            description: HTTP Auth credentials in form `user:password`

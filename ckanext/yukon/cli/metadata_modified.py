@@ -147,7 +147,7 @@ def restore_live_metadata_modified(
     if not dry_run:
         model.repo.commit()
 
-    summary = {
+    summary: dict[str, Any] = {
         "scanned": scanned,
         "matched": matched,
         "changed": changed,

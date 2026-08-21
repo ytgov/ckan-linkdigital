@@ -51,14 +51,14 @@ Dictionary with search facets
 					{% if h.get_param_int('_%s_limit' % name) %}
 					{% if h.has_more_facets(name, search_facets) %}
 					    <a href="{{ h.remove_url_param('_%s_limit' % name, replace=0, extras=extras, alternative_url=alternative_url) }}" class="facet-show-more  d-flex align-items-center gap-2 ">
-							{{ _('Show all') }} 
-						
+							{{ _('Show all') }}
+
 						</a>
 					{% endif %}
 				    {% else %}
 					<a href="{{ h.remove_url_param('_%s_limit' % name, extras=extras, alternative_url=alternative_url) }}" class="facet-show-more d-flex align-items-center gap-2 ">
 						{{ _('Show popular') }}
-						
+
 					</a>
 				    {% endif %}
 				</div>
@@ -78,11 +78,11 @@ Dictionary with search facets
 					    <li class="nav-item {% if item.active %} active{% endif %} facet-option" >
                             <a href="{{ href }}" title="{{ label if label != label_truncated else '' }}">
                                 <span class="item-label">{{ label }}</span>
-                               
+
                                 <span class="item-count ">({{ count }})</span>
 
                                 {% if item.active %}
-								<span class="facet-close" style="right:-12px;left:auto"> 
+								<span class="facet-close" style="right:-12px;left:auto">
 									<i class="fa fa-times"></i>
 								</span>
 								{% endif %}
@@ -92,7 +92,7 @@ Dictionary with search facets
 				    </ul>
 				</nav>
 				<p class="border-0 text-xs">
-				    
+
 				</p>
 			    {% else %}
 				<p class="empty">{{ _('There are no {facet_type} that match this search').format(facet_type=title) }}</p>

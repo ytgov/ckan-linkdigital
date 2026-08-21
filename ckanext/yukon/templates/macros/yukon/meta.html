@@ -1,0 +1,86 @@
+{%- macro footer(content) -%}
+    <footer {{ ui.util.attrs(kwargs, {"class": "bg-eden"}) }}>{{ content }}</footer>
+{%- endmacro %}
+
+{%- macro footer_main(content) -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "footer-left overflow-hidden"}) }}>
+        <div class="container-lg footer-logos">
+            {{ content }}
+        </div>
+
+    </div>
+{%- endmacro %}
+
+{%- macro footer_secondary(content, french) -%}
+    {% set current_url = request.url | urlencode %}
+    {%- set feedback_url = "https://forms2.service.yukon.ca/content/yukon-forms/ca" -%}
+    {%- if french -%}
+        {%- set feedback_url = feedback_url ~ "/fr/hpw/Parlez-nous-de-votre-experience-dutilisation-des-services-en-ligne.html" -%}
+    {%- else -%}
+        {%- set feedback_url = feedback_url ~ "/en/hpw/submit-feedback-about-your-digital-service-experience.html" -%}
+    {%- endif %}
+    {% set feedback_url = feedback_url ~ "?onlineService=Open%20government%20portal&url_referrer=" ~ current_url ~ ("&afAcceptLang=fr-ca" if french else "") %}
+
+    <div {{ ui.util.attrs(kwargs, {"class": "footer-right bg-tiber pb-2"}) }}>
+        <div class="container-lg d-md-flex justify-content-md-between" >
+            <div class="footer__menus text-base d-md-flex w-auto pt-4">
+                <div class="region region-footer-menu">
+                    {{ content }}
+
+                </div>
+            </div>
+            <div class="footer__legal font-light w-auto flex pt-2 pt-md-4 pb-2 ms-1 text-end">
+                ©&nbsp;{{ ui.util.now().year }}&nbsp;<a href="https://yukon.ca{{ '/fr' if french }}">{{ _("Government of Yukon") }}</a>
+                <div class="footer__feedback mt-1" style="font-weight: normal;">
+                    <a id="footer-feedback-link" class="yg-submit-feedback-link" href="{{ feedback_url }}" target="_blank" >
+                        {{ _("Formuler un commentaire") if french else _("Submit website feedback") }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{%- endmacro %}
+
+
+
+
+
+
+
+
+{%- macro account(content) -%}
+    <div {{ ui.util.attrs(kwargs, {"class": "account-masthead"}) }}>
+        {{ content }}
+    </div>
+{%- endmacro %}
+
+{%- macro header(content, title, subtitle, logo, href=h.url_for('home.index')) -%}
+    <header {{ ui.util.attrs(kwargs, {"class": "masthead"}) }}>
+        {%- call ui.util.call(ui.container) -%}
+            {% if g.debug and not g.debug_supress_header %}
+                <div class="debug">Blueprint : {{ g.blueprint }}<br />View : {{ g.view }}</div>
+            {% endif %}
+
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <div class="{{ g.header_class }} navbar-left col-md-2">
+                    {% if logo -%}
+                        {{ ui.link(ui.image(h.url_for_static_or_external(logo), alt=title, aria={"label": _('Navigate to Home - {site_title}').format(site_title=title)}), href=href, attrs={"class": "logo"}) }}
+
+                    {%- else -%}
+                        <h1>
+                            {{ ui.link(title, href=href) }}
+                        </h1>
+                    {%- endif %}
+                    {%- if subtitle -%}
+                        <h2>{{ subtitle }}</h2>
+                    {%- endif %}
+                </div>
+                {{ ui.button(ui.icon("bars"), attrs={"class": "navbar-toggler"}, data={"bs-toggle": "collapse", "bs-target": "#main-navigation-toggle"}, aria={"controls": "main-navigation-toggle",  "expanded": "false", "label": _('Toggle navigation')}) }}
+
+                <div class="main-navbar collapse navbar-collapse col-md-10" id="main-navigation-toggle">
+                    {{ content }}
+                </div>
+            </nav>
+        {%- endcall %}
+    </header>
+{%- endmacro %}

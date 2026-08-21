@@ -14,7 +14,6 @@
 {% set title = package.title or package.name %}
 {% set notes = h.render_markdown(package.notes) | striptags | truncate(180) %}
 
-
 {% block package_item %}
   <li class="{{ item_class or 'dataset-item' }} py-4 my-0">
     {% block content %}

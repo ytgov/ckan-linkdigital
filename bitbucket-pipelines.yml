@@ -1,0 +1,56 @@
+pipelines:
+  branches:
+    uat:
+      - step:
+          name: Linting code
+          runs-on:
+            - self.hosted
+            - linux
+            - aujumpbox
+          image: python:3.11
+          caches:
+            - pip
+          script:
+            - echo "Running lint process..."
+            - pip install ruff
+            - ruff check
+      - parallel:
+          steps:
+            - step:
+                name: Deploy CKAN to Services instance
+                runs-on:
+                  - self.hosted
+                  - linux
+                  - aujumpbox
+                script:
+                  - echo "Running deployment on Services instance..."
+                  - pipe: atlassian/ssh-run:0.8.1
+                    variables:
+                      SSH_USER: 'jumpbox-pipelines'
+                      SERVER: 'uatservices.$DOMAIN'
+                      MODE: 'script'
+                      SSH_KEY: $SSH_KEY
+                      COMMAND: 'deploy.sh'
+                      ENV_VARS: >-
+                        BRANCH=${BITBUCKET_BRANCH}
+                        BB_SSH_ORIGIN=${BITBUCKET_GIT_SSH_ORIGIN}
+                        INSTANCE_TYPE='SERVICES'
+            - step:
+                name: Deploy CKAN to Web instance
+                runs-on:
+                  - self.hosted
+                  - linux
+                  - aujumpbox
+                script:
+                  - echo "Running deployment on Web instance..."
+                  - pipe: atlassian/ssh-run:0.8.1
+                    variables:
+                      SSH_USER: 'jumpbox-pipelines'
+                      SERVER: 'uatweb.$DOMAIN'
+                      MODE: 'script'
+                      SSH_KEY: $SSH_KEY
+                      COMMAND: 'deploy.sh'
+                      ENV_VARS: >-
+                        BRANCH=${BITBUCKET_BRANCH}
+                        BB_SSH_ORIGIN=${BITBUCKET_GIT_SSH_ORIGIN}
+                        INSTANCE_TYPE='WEB'

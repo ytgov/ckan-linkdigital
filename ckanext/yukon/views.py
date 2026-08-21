@@ -1,28 +1,13 @@
-"""Views of the yukon plugin.
-
-All blueprints added to `__all__` are registered as blueprints inside Flask
-app. If you have multiple blueprints, create them inside submodules of
-`ckanext.yukon.views` and re-export via `__all__`.
-
-Example:
-    ```python
-    from .custom import custom_bp
-    from .data import data_bp
-
-    __all__ = ["custom_bp", "data_bp"]
-    ```
-"""
-
 from __future__ import annotations
 
-from typing import Any, cast
+import base64
+import json
+from typing import Any
 
 from flask import Blueprint
 from flask.views import MethodView
 
 import ckan.plugins.toolkit as tk
-from ckan import model
-from ckan.logic import parse_params
 from ckan.views.user import login
 
 __all__ = ["bp"]
@@ -67,93 +52,13 @@ def not_authorized_handler(error: tk.NotAuthorized) -> tuple[str, int]:
     )
 
 
-# use `Blueprint.route` decorators to register function-based views. This
-# approach is more readable than using `Blueprint.add_url_rule`.
-@bp.route("/yukon/page")
-def page():
-    """Basic page."""
-    return "Hello, yukon!"
-
-
-@bp.route("/yukon/page-redirect")
-def page_redirect():
-    """Complex page."""
-    return tk.redirect_to("yukon.page")
-
-
-# Class-based views cannot be registered via decorator
-class ComplexView(MethodView):
-    """Complex view.
-
-    Pellentesque dapibus suscipit ligula.  Donec posuere augue in quam.  Etiam
-    vel tortor sodales tellus ultricies commodo.  Suspendisse potenti.  Aenean
-    in sem ac leo mollis blandit.  Donec neque quam, dignissim in, mollis nec,
-    sagittis eu, wisi.  Phasellus lacus.  Etiam laoreet quam sed arcu.
-    Phasellus at dui in ligula mollis ultricies.  Integer placerat tristique
-    nisl.  Praesent augue.  Fusce commodo.  Vestibulum convallis, lorem a
-    tempus semper, dui dui euismod elit, vitae placerat urna tortor vitae
-    lacus.  Nullam libero mauris, consequat quis, varius et, dictum id, arcu.
-    Mauris mollis tincidunt felis.  Aliquam feugiat tellus ut neque.  Nulla
-    facilisis, risus a rhoncus fermentum, tellus tellus lacinia purus, et
-    dictum nunc justo sit amet elit.
-
-    Attributes:
-        template: page template of the view.
-    """
-
-    template = "yukon/complex.html"
-
-    def _prepare(self, word: str) -> dict[str, Any]:
-        tk.check_access(
-            "yukon_get_sum",
-            {},
-            {
-                "left": word,
-                "right": word,
-            },
-        )
-
-        username = tk.current_user.name
-        user = cast(model.User, tk.current_user) if tk.current_user.is_authenticated else None
-
-        return {
-            "word": word,
-            "username": username,
-            "user": user,
-        }
-
-    def get(self, word: str):
-        data = self._prepare(word)
-        return tk.render(self.template, data)
-
-    def post(self, word: str):
-        data = self._prepare(word)
-
-        params = parse_params(tk.request.form)
-
-        try:
-            result = tk.get_action("yukon_get_sum")(
-                {},
-                params,
-            )
-        except tk.ValidationError as err:
-            data["errors"] = err.error_dict
-            for field, msg in err.error_summary.items():
-                tk.h.flash_error(f"{field}: {msg}")
-
-            return tk.render(self.template, data)
-
-        tk.h.flash_success("Yay! {}".format(result["sum"]))
-        return tk.redirect_to("yukon.page")
-
-
 class SelectDatasetTypeView(MethodView):
     def post(self):
         type_ = tk.request.form["type"]
         return tk.redirect_to(f"{type_}.new")
 
     def get(self):
-        extra_vars = {
+        extra_vars: dict[str, Any] = {
             "form_snippet": "package/snippets/yukon_select_dataset_type_form.html",
             "pkg_dict": {},
             "form_vars": {
@@ -174,14 +79,35 @@ def internal_login():
     return login()
 
 
-# we don't have to specify `methods` parameter, because `MethodView` already
-# contains this information
-bp.add_url_rule(
-    "/yukon/complex/<word>",
-    view_func=ComplexView.as_view("complex"),
-)
-
 bp.add_url_rule(
     "/dataset/new",
     view_func=SelectDatasetTypeView.as_view("select_dataset_type"),
 )
+
+
+@bp.route("/dataset/<id>/download-all")
+def download_all(id: str):
+    pkg = tk.get_action("package_show")({}, {"id": id})
+
+    headers = {}
+    if credentials := tk.config["yukon.http_auth"]:
+        encoded = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+        headers = {"Authorization": f"Basic {encoded}"}
+
+    items = [
+        {"id": res["id"], "url": res["url"], "headers": headers}
+        for res in pkg["resources"]
+        if res.get("url_type") == "upload"
+    ]
+
+    ticket = tk.get_action("fpx_order_ticket")(
+        {},
+        {
+            "type": "zip",
+            "items": base64.encodebytes(json.dumps(items).encode()).decode(),
+        },
+    )
+
+    id_ = ticket["id"]
+
+    return tk.redirect_to(tk.h.fpx_service_url() + f"ticket/{id_}/download")
