@@ -70,3 +70,25 @@ def drop_downloadall():
             rebuild(pkg)
 
     click.secho("Done", fg="green")
+
+
+@maintain.command()
+def fix_resource_order():
+    """Restore resoruce order field to allow creation oof new resources.
+
+    This command is a part of v2.12 upgrade. Remove it after YUKONXCIAA-45 deployment.
+
+    """
+    stmt = sa.select(
+        model.Resource,
+        sa.func.row_number().over(order_by=model.Resource.position, partition_by=model.Resource.package_id) - 1,
+    ).order_by(model.Resource.package_id.asc(), model.Resource.position.asc())
+
+    pkg_ids: set[str] = set()
+    for res, rank in model.Session.execute(stmt):
+        if res.position != rank:
+            res.position = rank
+            pkg_ids.add(res.package_id)
+    model.Session.commit()
+    for pkg_id in pkg_ids:
+        rebuild(pkg_id)
