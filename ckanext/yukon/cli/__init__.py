@@ -114,7 +114,8 @@ def clear_stream():
     )
 
     total = model.Session.scalar(pkg_stmt.with_only_columns(sa.func.count(Activity.object_id.distinct()))) or 0
-    with click.progressbar(model.Session.scalars(pkg_stmt), length=total) as bar:
+    ids = model.Session.scalars(pkg_stmt).fetchall()
+    with click.progressbar(ids, length=total) as bar:
         for idx, pkg_id in enumerate(bar, 1):
             stmt = (
                 sa.select(Activity)
