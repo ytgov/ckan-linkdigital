@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from itertools import pairwise
+from typing import Any
+
 import click
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -7,6 +10,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 import ckan.plugins.toolkit as tk
 from ckan import model
 from ckan.lib.search import rebuild
+
+from ckanext.activity.model import Activity
 
 from ckanext.yukon.cli.metadata_modified import restore_metadata_modified
 from ckanext.yukon.cli.migration import data_migration
@@ -93,6 +98,49 @@ def fix_resource_order():
         if res.position != rank:
             res.position = rank
             pkg_ids.add(res.package_id)
-    model.Session.commit()
+            model.Session.commit()
     for pkg_id in pkg_ids:
         rebuild(pkg_id)
+
+
+@maintain.command()
+def clear_stream():
+    """Remove flood activities created by downloadall extension.
+
+    This command is a part of v2.12 upgrade. Remove it after YUKONXCIAA-47 deployment.
+    """
+    pkg_stmt = sa.select(Activity.object_id.distinct()).where(
+        Activity.activity_type.in_(["changed package", "new package"])
+    )
+
+    with click.progressbar(
+        model.Session.scalars(pkg_stmt), length=model.Session.scalar(pkg_stmt.with_only_columns(sa.func.count()))
+    ) as bar:
+        for pkg_id in bar:
+            stmt = (
+                sa.select(Activity)
+                .where(Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"]))
+                .order_by(Activity.timestamp)
+            )
+
+            for prev, cur in pairwise(model.Session.scalars(stmt)):
+                first: dict[str, Any] = prev.data["package"]
+                second: dict[str, Any] = cur.data["package"]
+                if not first or not second:
+                    continue
+
+                if first.keys() != second.keys():
+                    continue
+
+                keys = first.keys() - {"metadata_modified", "resources"}
+                if any(first[key] != second[key] for key in keys):
+                    continue
+
+                first_resources = [res for res in first["resources"] if not res.get("downloadall_datapackage_hash")]
+                second_resources = [res for res in second["resources"] if not res.get("downloadall_datapackage_hash")]
+                if first_resources != second_resources:
+                    continue
+
+                model.Session.delete(cur)
+
+            model.Session.commit()
