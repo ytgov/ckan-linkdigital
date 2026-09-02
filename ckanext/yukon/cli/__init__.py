@@ -124,9 +124,15 @@ def clear_stream():
                 .where(Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"]))
                 .order_by(Activity.timestamp)
             )
-            bar.label = f"[{idx} / {total}]Analyzing package {pkg_id}"
+            activities = model.Session.scalars(stmt).fetchall()
+            label = f"[{idx} / {total}]Analyzing package {pkg_id}"
+            bar.label = label
+            bar.render_progress()
 
-            for prev, cur in pairwise(model.Session.scalars(stmt)):
+
+            for activity_idx, (prev, cur) in enumerate(pairwise(activities), 1):
+                bar.label = f"{label}: {activity_idx} of {len(activities) - 1} activities"
+                bar.render_progress()
                 first: dict[str, Any] = prev.data["package"]
                 second: dict[str, Any] = cur.data["package"]
                 if not first or not second:
