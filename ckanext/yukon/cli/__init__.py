@@ -119,34 +119,39 @@ def clear_stream():
             bar.label = label
             bar.render_progress()
 
-            stmt = (
-                sa.select(Activity)
-                .where(Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"]))
-                .order_by(Activity.timestamp)
+            stmt = sa.select(Activity).where(
+                Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"])
             )
-            activities = model.Session.scalars(stmt).fetchall()
 
-            for activity_idx, (prev, cur) in enumerate(pairwise(activities), 1):
-                bar.label = f"{label}: {activity_idx} of {len(activities) - 1} activities"
-                bar.render_progress()
-                first: dict[str, Any] = prev.data["package"]
-                second: dict[str, Any] = cur.data["package"]
-                if not first or not second:
-                    continue
+            activities_count = model.Session.scalar(stmt.with_only_columns(sa.func.count(Activity.id))) or 0
 
-                if first.keys() != second.keys():
-                    continue
+            activities = model.Session.scalars(stmt.order_by(Activity.timestamp))
+            start = 0
+            while batch := activities.fetchmany(1000):
+                for activity_idx, (prev, cur) in enumerate(pairwise(batch), start + 1):
+                    bar.label = f"{label}: {activity_idx} of {activities_count - 1} activities"
+                    bar.render_progress()
+                    first: dict[str, Any] = prev.data["package"]
+                    second: dict[str, Any] = cur.data["package"]
+                    if not first or not second:
+                        continue
 
-                keys = first.keys() - {"metadata_modified", "resources"}
-                if any(first[key] != second[key] for key in keys):
-                    continue
+                    if first.keys() != second.keys():
+                        continue
 
-                first_resources = [res for res in first["resources"] if not res.get("downloadall_datapackage_hash")]
-                second_resources = [res for res in second["resources"] if not res.get("downloadall_datapackage_hash")]
-                if first_resources != second_resources:
-                    continue
+                    keys = first.keys() - {"metadata_modified", "resources"}
+                    if any(first[key] != second[key] for key in keys):
+                        continue
 
-                to_remove.append(cur.id)
+                    first_resources = [res for res in first["resources"] if not res.get("downloadall_datapackage_hash")]
+                    second_resources = [
+                        res for res in second["resources"] if not res.get("downloadall_datapackage_hash")
+                    ]
+                    if first_resources != second_resources:
+                        continue
+
+                    to_remove.append(cur.id)
+                start += 1000
 
     page_size = 500
     for i in range(len(to_remove) // page_size):
