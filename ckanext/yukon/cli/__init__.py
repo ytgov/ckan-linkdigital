@@ -109,15 +109,15 @@ def clear_stream():
         Activity.activity_type.in_(["changed package", "new package"])
     )
 
-    with click.progressbar(
-        model.Session.scalars(pkg_stmt), length=model.Session.scalar(pkg_stmt.with_only_columns(sa.func.count()))
-    ) as bar:
-        for pkg_id in bar:
+    total = model.Session.scalar(pkg_stmt.with_only_columns(sa.func.count(Activity.object_id.distinct()))) or 0
+    with click.progressbar(model.Session.scalars(pkg_stmt), length=total) as bar:
+        for idx, pkg_id in enumerate(bar, 1):
             stmt = (
                 sa.select(Activity)
                 .where(Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"]))
                 .order_by(Activity.timestamp)
             )
+            bar.label = f"[{idx} / {total}]Updating package {pkg_id}"
 
             for prev, cur in pairwise(model.Session.scalars(stmt)):
                 first: dict[str, Any] = prev.data["package"]
