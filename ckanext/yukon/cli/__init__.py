@@ -119,16 +119,16 @@ def clear_stream():
     to_remove: list[str] = []
     with click.progressbar(ids, length=total) as bar:
         for idx, pkg_id in enumerate(bar, 1):
+            label = f"[{idx} / {total}]Analyzing package {pkg_id}"
+            bar.label = label
+            bar.render_progress()
+
             stmt = (
                 sa.select(Activity)
                 .where(Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"]))
                 .order_by(Activity.timestamp)
             )
             activities = model.Session.scalars(stmt).fetchall()
-            label = f"[{idx} / {total}]Analyzing package {pkg_id}"
-            bar.label = label
-            bar.render_progress()
-
 
             for activity_idx, (prev, cur) in enumerate(pairwise(activities), 1):
                 bar.label = f"{label}: {activity_idx} of {len(activities) - 1} activities"
