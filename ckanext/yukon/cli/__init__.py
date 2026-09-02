@@ -129,10 +129,10 @@ def clear_stream():
 
             activities_count = model.Session.scalar(stmt.with_only_columns(sa.func.count(Activity.id))) or 0
 
-            activities = model.Session.scalars(stmt.order_by(Activity.timestamp))
-            start = 0
-            while batch := activities.fetchmany(1000):
-                for activity_idx, (prev, cur) in enumerate(pairwise(batch), start + 1):
+            for activity_offset in range(0, activities_count, 50):
+                activities = model.Session.scalars(stmt.order_by(Activity.timestamp).offset(activity_offset).limit(51))
+
+                for activity_idx, (prev, cur) in enumerate(pairwise(activities), activity_offset + 1):
                     bar.label = f"{label}: {activity_idx} of {activities_count - 1} activities"
                     bar.render_progress()
                     first: dict[str, Any] = prev.data["package"]
@@ -155,7 +155,6 @@ def clear_stream():
                         continue
 
                     to_remove.append(cur.id)
-                start += 1000
 
     page_size = 500
     for i in range(len(to_remove) // page_size):
