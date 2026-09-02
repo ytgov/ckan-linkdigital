@@ -111,6 +111,8 @@ def clear_stream():
 
     total = model.Session.scalar(pkg_stmt.with_only_columns(sa.func.count(Activity.object_id.distinct()))) or 0
     ids = model.Session.scalars(pkg_stmt).fetchall()
+
+    to_remove: list[str] = []
     with click.progressbar(ids, length=total) as bar:
         for idx, pkg_id in enumerate(bar, 1):
             stmt = (
@@ -118,7 +120,7 @@ def clear_stream():
                 .where(Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"]))
                 .order_by(Activity.timestamp)
             )
-            bar.label = f"[{idx} / {total}]Updating package {pkg_id}"
+            bar.label = f"[{idx} / {total}]Analyzing package {pkg_id}"
 
             for prev, cur in pairwise(model.Session.scalars(stmt)):
                 first: dict[str, Any] = prev.data["package"]
@@ -138,6 +140,11 @@ def clear_stream():
                 if first_resources != second_resources:
                     continue
 
-                model.Session.delete(cur)
+                to_remove.append(cur.id)
 
-            model.Session.commit()
+    page_size = 500
+    for i in range(len(to_remove) // page_size):
+        start = i * page_size
+        click.echo(f"Removing {page_size} records({start} / {len(to_remove)})")
+        model.Session.execute(sa.delete(Activity).where(Activity.id.in_(to_remove[start : start + page_size])))
+        model.Session.commit()
