@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from itertools import pairwise
+from typing import Any
+
 import click
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -7,6 +10,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 import ckan.plugins.toolkit as tk
 from ckan import model
 from ckan.lib.search import rebuild
+
+from ckanext.activity.model import Activity
 
 from ckanext.yukon.cli.metadata_modified import restore_metadata_modified
 from ckanext.yukon.cli.migration import data_migration
@@ -89,6 +94,67 @@ def fix_resource_order():
         if res.position != rank:
             res.position = rank
             pkg_ids.add(res.package_id)
-    model.Session.commit()
+            model.Session.commit()
     for pkg_id in pkg_ids:
         rebuild(pkg_id)
+
+
+@maintain.command()
+def clear_stream():
+    """Remove flood activities created by downloadall extension.
+
+    This command is a part of v2.12 upgrade. Remove it after YUKONXCIAA-47 deployment.
+    """
+    pkg_stmt = sa.select(Activity.object_id.distinct()).where(
+        Activity.activity_type.in_(["changed package", "new package"])
+    )
+
+    total = model.Session.scalar(pkg_stmt.with_only_columns(sa.func.count(Activity.object_id.distinct()))) or 0
+    ids = model.Session.scalars(pkg_stmt).fetchall()
+
+    to_remove: list[str] = []
+    with click.progressbar(ids, length=total) as bar:
+        for idx, pkg_id in enumerate(bar, 1):
+            label = f"[{idx} / {total}]Analyzing package {pkg_id}"
+            bar.label = label
+            bar.render_progress()
+
+            stmt = sa.select(Activity).where(
+                Activity.object_id == pkg_id, Activity.activity_type.in_(["changed package", "new package"])
+            )
+
+            activities_count = model.Session.scalar(stmt.with_only_columns(sa.func.count(Activity.id))) or 0
+
+            for activity_offset in range(0, activities_count, 50):
+                activities = model.Session.scalars(stmt.order_by(Activity.timestamp).offset(activity_offset).limit(51))
+
+                for activity_idx, (prev, cur) in enumerate(pairwise(activities), activity_offset + 1):
+                    bar.label = f"{label}: {activity_idx} of {activities_count - 1} activities"
+                    bar.render_progress()
+                    first: dict[str, Any] = prev.data["package"]
+                    second: dict[str, Any] = cur.data["package"]
+                    if not first or not second:
+                        continue
+
+                    if first.keys() != second.keys():
+                        continue
+
+                    keys = first.keys() - {"metadata_modified", "resources"}
+                    if any(first[key] != second[key] for key in keys):
+                        continue
+
+                    first_resources = [res for res in first["resources"] if not res.get("downloadall_datapackage_hash")]
+                    second_resources = [
+                        res for res in second["resources"] if not res.get("downloadall_datapackage_hash")
+                    ]
+                    if first_resources != second_resources:
+                        continue
+
+                    to_remove.append(cur.id)
+
+    page_size = 500
+    for i in range(len(to_remove) // page_size):
+        start = i * page_size
+        click.echo(f"Removing {page_size} records({start} / {len(to_remove)})")
+        model.Session.execute(sa.delete(Activity).where(Activity.id.in_(to_remove[start : start + page_size])))
+        model.Session.commit()
