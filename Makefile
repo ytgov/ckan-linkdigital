@@ -1,11 +1,7 @@
 ###############################################################################
 #                             requirements: start                             #
 ###############################################################################
-# CKAN core supports this short syntax. But internally it's unfolds into
-## remote-ckan = https://github.com/ckan/ckan tag ckan-2.10.4
-# if you want to use CKAN fork or specific commit, use this full specification
-# ckan_tag = ckan-2.12.0
-remote-ckan = https://github.com/ckan/ckan commit 0e1d753 # dev-v2.12, 2026-08-03
+ckan_tag = ckan-2.12.0
 
 ext_list = \
 	scheming \

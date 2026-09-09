@@ -1,4 +1,4 @@
-_installer_version = v0.0.33
+_installer_version = v0.0.34
 _version ?= $(_installer_version)
 
 develop =
@@ -12,15 +12,19 @@ alternative ?= remote
 remote-ckan ?= https://github.com/ckan/ckan.git tag $(ckan_tag)
 upgrade_requirements ?= 1
 
+constraints =
+CDM_USE_UV ?=
+with_submodules =
+
 vpath ckanext-% $(root_dir)
 vpath ckan $(root_dir)
 
 define pip-file
-$(if $(pyright_compatible),SETUPTOOLS_ENABLE_FEATURES="legacy-editable" )pip install $(if $(2),-U )-r "$(1)"$(if $(local), --no-index -f "$(root_dir)/$(index)");
+$(if $(pyright_compatible),SETUPTOOLS_ENABLE_FEATURES="legacy-editable" )$(if $(CDM_USE_UV),uv ,)pip install $(if $(2),-U )-r "$(1)"$(if $(local), --no-index -f "$(root_dir)/$(index)") $(if $(constraints),-c $(constraints)) || exit 1;
 endef
 
 define self-install
-$(if $(pyright_compatible),SETUPTOOLS_ENABLE_FEATURES="legacy-editable" )pip install -e'.$(if $(1),[$(1)])' $(if $(local), --no-index -f "$(root_dir)/$(index)");
+$(if $(pyright_compatible),SETUPTOOLS_ENABLE_FEATURES="legacy-editable" )$(if $(CDM_USE_UV),uv ,)pip install -e'.$(if $(1),[$(1)])' $(if $(local), --no-index -f "$(root_dir)/$(index)") $(if $(constraints),-c $(constraints)) || exit 1;
 endef
 
 define resolve-package-extras
@@ -62,6 +66,36 @@ endef
 define checkout-target
 $(call checkout-$(2),$(1))
 endef
+
+define download-branch-or-tag
+$(eval remote := $(1))
+$(eval target := $(2))
+$(eval ext_path := $(3))
+@echo "Running: git clone $(shell echo '$(remote)' | sed 's|://[^@]*@|://*****:*****@|') --depth 1 $(ext_path)"
+@git clone $(remote) --branch $(target) --depth 1 $(ext_path) && rm -rf $(ext_path)/$*/.git;
+endef
+
+define download-branch
+$(call download-branch-or-tag,$(1),$(2),$(3))
+endef
+
+define download-tag
+$(call download-branch-or-tag,$(1),$(2),$(3))
+endef
+
+define download-commit
+$(eval remote := $(1))
+$(eval target := $(2))
+$(eval ext_path := $(3))
+git clone --filter=blob:none --no-checkout $(remote) $(ext_path); \
+cd $(ext_path); \
+git checkout $(target)
+endef
+
+define download-target
+$(call download-$(2),$(1),$(3),$(4))
+endef
+
 
 define download-packages
 pip download . -d "$(root_dir)/$(index)"; \
@@ -111,6 +145,8 @@ info:
 	@echo
 	@echo -e '\tself-install - install current extension and its requirements'
 	@echo
+	@echo -e '\tdownload - download extension source without git history'
+	@echo
 	@echo -e '\tfull-upgrade - synchronize and install everything(it is just a combination of `sync ckan-sync install ckan-install self-install`)'
 	@echo
 	@echo -e '\tlocal-index - download all the requirements. This allows you to install the project with `local=1` flag even without internet access'
@@ -145,11 +181,11 @@ list:
 
 .SECONDEXPANSION:
 
-install ckanext sync check local-index: $(ext_list:%=$$@-%)
-ckanext-% check-% sync-% install-% local-index-% %.tar: ext_path=$(root_dir)/ckanext-$*
-ckanext-% check-% sync-% install-%: type = $(word 2, $(call resolve-remote,$*))
-ckanext-% check-% sync-% install-%: remote = $(firstword $(call resolve-remote,$*))
-ckanext-% check-% sync-% install-%: target = $(word 3, $(call resolve-remote,$*))
+install ckanext sync check local-index download: $(ext_list:%=$$@-%)
+ckanext-% check-% sync-% install-% local-index-% download-% %.tar: ext_path=$(root_dir)/ckanext-$*
+ckanext-% check-% sync-% install-% download-%: type = $(word 2, $(call resolve-remote,$*))
+ckanext-% check-% sync-% install-% download-%: remote = $(firstword $(call resolve-remote,$*))
+ckanext-% check-% sync-% install-% download-%: target = $(word 3, $(call resolve-remote,$*))
 install-%: package_extras = $(call resolve-package-extras,$*)
 archive: $(ext_list:%=%.tar)
 
@@ -158,7 +194,8 @@ install-ckan:
 
 ckanext-%:
 	@echo [Clone $* into $(ext_path)]
-	git clone $(remote) $(ext_path);
+	@echo "Running: git clone $(shell echo '$(remote)' | sed 's|://[^@]*@|://*****:*****@|') $(ext_path)"
+	@git clone $(if $(with_submodules),--recurse-submodules )$(remote) $(ext_path);
 	cd $(ext_path); \
 	$(call checkout-target,$(target),$(type))
 
@@ -172,6 +209,14 @@ sync-%: ckanext-%
 	$(call checkout-target,$(target),$(type)) \
 	git clean -df;
 
+
+download-%:
+	@echo [Download $* into $(ext_path) - $(type) $(target)]
+	@echo "Removing existing $* folder"
+	rm -rf $(ext_path); \
+	$(call download-target,$(target),$(type),$(remote),$(ext_path))
+
+
 ckan: ckan_path=$(root_dir)/ckan
 
 ckan ckan-sync: type = $(word 2, $(call resolve-remote,ckan))
@@ -179,7 +224,8 @@ ckan ckan-sync: remote = $(firstword $(call resolve-remote,ckan))
 ckan ckan-sync ckan-check: target = $(lastword $(call resolve-remote,ckan))
 ckan:
 	@echo [Clone ckan into $(ckan_path)]
-	git clone $(remote) $(ckan_path);
+	@echo "Running: git clone $(shell echo '$(remote)' | sed 's|://[^@]*@|://*****:*****@|') $(ext_path)"
+	@git clone $(remote) $(ckan_path);
 
 ckan-sync: ckan
 	$(call ensure-ckan)
@@ -263,7 +309,6 @@ local-index:
 	$(call ensure-ckan)
 	cd $(root_dir)/ckan; \
 	pip download wheel setuptools -d "$(root_dir)/$(index)"; \
-	$(call download-packages)
 	$(call download-packages)
 
 local-index-%:

@@ -84,10 +84,14 @@ def fix_resource_order():
     This command is a part of v2.12 upgrade. Remove it after YUKONXCIAA-45 deployment.
 
     """
-    stmt = sa.select(
-        model.Resource,
-        sa.func.row_number().over(order_by=model.Resource.position, partition_by=model.Resource.package_id) - 1,
-    ).order_by(model.Resource.package_id.asc(), model.Resource.position.asc())
+    stmt = (
+        sa.select(
+            model.Resource,
+            sa.func.row_number().over(order_by=model.Resource.position, partition_by=model.Resource.package_id) - 1,
+        )
+        .where(model.Resource.state == "active")
+        .order_by(model.Resource.package_id.asc(), model.Resource.position.asc())
+    )
 
     pkg_ids: set[str] = set()
     for res, rank in model.Session.execute(stmt):
