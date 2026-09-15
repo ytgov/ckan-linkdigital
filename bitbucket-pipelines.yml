@@ -54,3 +54,13 @@ pipelines:
                         BRANCH=${BITBUCKET_BRANCH}
                         BB_SSH_ORIGIN=${BITBUCKET_GIT_SSH_ORIGIN}
                         INSTANCE_TYPE='WEB'
+
+    master:
+      - step:
+          clone:
+            depth: full
+          script:
+            - git remote add ClientGitHub git@github.com:ytgov/ckan-linkdigital.git
+            - git checkout master
+            - git pull
+            - git push ClientGitHub master
